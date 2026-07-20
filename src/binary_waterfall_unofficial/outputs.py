@@ -1,14 +1,18 @@
+from __future__ import annotations
+from typing import Any, cast
+
 import os
 import shutil
 import math
 import time
 import tempfile
-import pydub
-from moviepy.editor import ImageSequenceClip, AudioFileClip
+import pydub # pyright: ignore[reportMissingTypeStubs]
+from moviepy import ImageSequenceClip, AudioFileClip # pyright: ignore[reportMissingTypeStubs]
 from PIL import Image
-from PyQt5.QtCore import QUrl
-from PyQt5.QtMultimedia import QMediaPlayer, QMediaContent
-from PyQt5.QtGui import QImage, QPixmap
+from PyQt6.QtCore import QUrl
+from PyQt6.QtMultimedia import QMediaPlayer, QAudioOutput
+from PyQt6.QtGui import QImage, QPixmap
+from PyQt6.QtWidgets import QProgressDialog
 
 from . import generators, helpers, constants
 
@@ -17,21 +21,21 @@ from . import generators, helpers, constants
 #   Provides an abstraction for displaying images and audio in the GUI
 class Player:
     def __init__(self,
-                 binary_waterfall,
-                 display,
-                 set_playbutton_function=None,
-                 set_seekbar_function=None,
-                 max_dim=constants.DEFAULTS["max_dim"],
-                 fps=constants.DEFAULTS["player_fps"]
-                 ):
-        self.image = None
-        self.volume = None
-        self.fps = None
-        self.frame_ms = None
-        self.height = None
-        self.width = None
-        self.dim = None
-        self.max_dim = None
+                 binary_waterfall: generators.BinaryWaterfall,
+                 display: Any,
+                 set_playbutton_function: Any | None = None,
+                 set_seekbar_function: Any | None = None,
+                 max_dim: int = cast(int, constants.DEFAULTS["max_dim"]),
+                 fps: float = cast(float, constants.DEFAULTS["player_fps"])
+                 ) -> None:
+        self.image: QImage | None = None
+        self.volume: int = 0
+        self.fps: float = 0.0
+        self.frame_ms: int = 0
+        self.height: int = 0
+        self.width: int = 0
+        self.dim: tuple[int, int] = (0, 0)
+        self.max_dim: int = 0
 
         self.bw = binary_waterfall
 
@@ -47,28 +51,30 @@ class Player:
 
         # Make the QMediaPlayer for audio playback
         self.audio = QMediaPlayer()
-        # self.audio_output = QAudioOutput()
-        # self.audio.setAudioOutput(self.audio_output)
+        self.audio_output = QAudioOutput()
+        self.audio.setAudioOutput(self.audio_output)
 
         # Set audio playback settings
         self.set_volume(100)
 
         # Set set_image_timestamp to run when the audio position is changed
-        self.audio.positionChanged.connect(self.set_image_timestamp)
-        self.audio.positionChanged.connect(self.set_seekbar_if_given)
+        self.audio.positionChanged.connect(self.set_image_timestamp) # pyright: ignore[reportUnknownMemberType]
+        self.audio.positionChanged.connect(self.set_seekbar_if_given) # pyright: ignore[reportUnknownMemberType]
         # Also, make sure it's updating more frequently (default is too slow when playing)
         self.fps_min = 1
         self.fps_max = 120
         self.set_fps(fps)
 
         # Setup change state handler
-        self.audio.stateChanged.connect(self.state_changed_handler)
+        self.audio.playbackStateChanged.connect(self.state_changed_handler) # pyright: ignore[reportUnknownMemberType]
 
-    def __del__(self):
+    def __del__(self) -> None:
         self.running = False
 
-    def set_dims(self, max_dim):
+    def set_dims(self, max_dim: int) -> None:
         self.max_dim = max_dim
+        assert self.bw.width is not None
+        assert self.bw.height is not None
         if self.bw.width > self.bw.height:
             self.width = round(max_dim)
             self.height = round(self.width * (self.bw.height / self.bw.width))
@@ -78,12 +84,11 @@ class Player:
 
         self.dim = (self.width, self.height)
 
-    def set_fps(self, fps):
+    def set_fps(self, fps: float) -> None:
         self.fps = min(max(fps, self.fps_min), self.fps_max)
         self.frame_ms = math.floor(1000 / self.fps)
-        self.audio.setNotifyInterval(self.frame_ms)
 
-    def clear_image(self):
+    def clear_image(self) -> None:
         background_image = Image.new(
             mode="RGBA",
             size=(self.width, self.height),
@@ -104,7 +109,7 @@ class Player:
 
         self.set_image(qimg)
 
-    def update_dims(self, max_dim):
+    def update_dims(self, max_dim: int) -> None:
         # Change dims
         self.set_dims(max_dim=max_dim)
 
@@ -112,19 +117,20 @@ class Player:
         if self.bw.filename is None:
             self.clear_image()
         else:
+            assert self.image is not None
             self.set_image(self.image)
 
-    def refresh_dims(self):
+    def refresh_dims(self) -> None:
         self.update_dims(self.max_dim)
 
-    def set_volume(self, volume):
+    def set_volume(self, volume: int) -> None:
         self.volume = volume
-        self.audio.setVolume(volume)
+        self.audio_output.setVolume(volume / 100.0)
 
-    def scale_image(self, image):
+    def scale_image(self, image: QImage) -> QImage:
         return image.scaled(self.width, self.height)
 
-    def set_image(self, image):
+    def set_image(self, image: QImage) -> None:
         self.image = self.scale_image(image)
 
         # Compute the QPixmap version
@@ -133,13 +139,13 @@ class Player:
         # Set the picture
         self.display.setPixmap(qpixmap)
 
-    def get_position(self):
+    def get_position(self) -> int:
         return self.audio.position()
 
-    def get_duration(self):
+    def get_duration(self) -> int:
         return self.audio.duration()
 
-    def set_position(self, ms):
+    def set_position(self, ms: int) -> None:
         duration = self.get_duration()
 
         # Validate it's in range, and if it's not, clip it
@@ -156,54 +162,53 @@ class Player:
         if ms == duration:
             self.pause()
 
-    def set_playbutton_if_given(self, play):
+    def set_playbutton_if_given(self, play: bool) -> None:
         if self.set_play_button is not None:
             self.set_play_button(play=play)
 
-    def set_seekbar_if_given(self, ms):
+    def set_seekbar_if_given(self, ms: int) -> None:
         if self.set_seekbar_function is not None:
             self.set_seekbar_function(ms)
 
-    def state_changed_handler(self, media_state):
-        if media_state == self.audio.PlayingState:
+    def state_changed_handler(self, media_state: QMediaPlayer.PlaybackState) -> None:
+        if media_state == QMediaPlayer.PlaybackState.PlayingState:
             self.set_playbutton_if_given(play=False)
-        elif media_state == self.audio.PausedState:
+        elif media_state == QMediaPlayer.PlaybackState.PausedState:
             self.set_playbutton_if_given(play=True)
-        elif media_state == self.audio.StoppedState:
+        elif media_state == QMediaPlayer.PlaybackState.StoppedState:
             self.set_playbutton_if_given(play=True)
 
-    def play(self):
+    def play(self) -> None:
         self.audio.play()
 
-    def pause(self):
+    def pause(self) -> None:
         self.audio.pause()
 
-    def forward(self, ms=5000):
+    def forward(self, ms: int = 5000) -> None:
         new_pos = self.get_position() + ms
         self.set_position(new_pos)
 
-    def back(self, ms=5000):
+    def back(self, ms: int = 5000) -> None:
         new_pos = self.get_position() - ms
         self.set_position(new_pos)
 
-    def frame_forward(self):
+    def frame_forward(self) -> None:
         self.forward(ms=self.frame_ms)
 
-    def frame_back(self):
+    def frame_back(self) -> None:
         self.back(ms=self.frame_ms)
 
-    def restart(self):
+    def restart(self) -> None:
         self.set_position(0)
 
-    def set_audio_file(self, filename):
+    def set_audio_file(self, filename: str | None) -> None:
         if filename is None:
-            url = QUrl(None)
+            url = QUrl("")
         else:
             url = QUrl.fromLocalFile(self.bw.audio_filename)
-        media = QMediaContent(url)
-        self.audio.setMedia(media)
+        self.audio.setSource(url)
 
-    def open_file(self, filename):
+    def open_file(self, filename: str | None) -> None:
         self.close_file()
 
         self.bw.change_filename(filename)
@@ -212,7 +217,7 @@ class Player:
 
         self.set_image_timestamp(self.get_position())
 
-    def close_file(self):
+    def close_file(self) -> None:
         self.pause()
 
         self.audio.stop()
@@ -224,34 +229,34 @@ class Player:
         self.restart()
         self.clear_image()
 
-    def file_is_open(self):
+    def file_is_open(self) -> bool:
         if self.bw.filename is None:
             return False
         else:
             return True
 
-    def is_playing(self):
-        if self.audio.state() == self.audio.PlayingState:
+    def is_playing(self) -> bool:
+        if self.audio.playbackState() == QMediaPlayer.PlaybackState.PlayingState:
             return True
         else:
             return False
 
-    def set_image_timestamp(self, ms):
+    def set_image_timestamp(self, ms: int) -> None:
         if self.bw.filename is None:
             self.clear_image()
         else:
             self.set_image(self.bw.get_frame_qimage(ms))
 
-    def update_image(self):
+    def update_image(self) -> None:
         ms = self.get_position()
         self.set_image_timestamp(ms)
 
     def set_audio_settings(self,
-                           num_channels,
-                           sample_bytes,
-                           sample_rate,
-                           volume
-                           ):
+                           num_channels: int,
+                           sample_bytes: int,
+                           sample_rate: int,
+                           volume: int
+                           ) -> None:
         self.bw.set_audio_settings(
             num_channels=num_channels,
             sample_bytes=sample_bytes,
@@ -267,23 +272,23 @@ class Player:
 #   Provides an abstraction for rendering images, audio, and video to files
 class Renderer:
     def __init__(self,
-                 binary_waterfall,
-                 ):
+                 binary_waterfall: generators.BinaryWaterfall,
+                 ) -> None:
         self.bw = binary_waterfall
 
     def export_frame(self,
-                     ms,
-                     filename,
-                     size=None,
-                     keep_aspect=False
-                     ):
+                     ms: int,
+                     filename: str,
+                     size: tuple[int, int] | None = None,
+                     keep_aspect: bool = False
+                     ) -> None:
         helpers.make_file_path(filename)
 
         if self.bw.audio_filename is None:
             # If no file is loaded, make a black image
             source = Image.new(
                 mode="RGBA",
-                size=(self.bw.width, self.bw.height),
+                size=(self.bw.width or 1, self.bw.height or 1),
                 color="#000"
             )
         else:
@@ -294,14 +299,14 @@ class Renderer:
             resized = source
         else:
             if keep_aspect:
-                output_size = helpers.get_size_for_fit_frame(content_size=source.size, frame_size=size)["size"]
+                output_size: tuple[int, int] = helpers.get_size_for_fit_frame(content_size=source.size, frame_size=size)["size"] # pyright: ignore[reportAssignmentType]
             else:
-                output_size = size
+                output_size: tuple[int, int] = size
 
             resized = helpers.fit_to_frame(
                 image=source,
                 frame_size=output_size,
-                scaling=Image.NEAREST,
+                scaling=Image.Resampling.NEAREST,
                 transparent=False
             )
 
@@ -309,36 +314,37 @@ class Renderer:
 
         final.save(filename)
 
-    def export_audio(self, filename):
-        filename_main, filename_ext = os.path.splitext(filename)
+    def export_audio(self, filename: str) -> None:
+        _filename_main, filename_ext = os.path.splitext(filename)
         filename_ext = filename_ext.lower()
 
         helpers.make_file_path(filename)
 
         if filename_ext == constants.AudioFormatCode.WAVE.value:
             # Just copy the .wav file
+            assert self.bw.audio_filename is not None
             shutil.copy(self.bw.audio_filename, filename)
         elif filename_ext == constants.AudioFormatCode.MP3.value:
             # Use Pydub to export MP3
-            pydub.AudioSegment.from_wav(self.bw.audio_filename).export(filename, format="mp3")
+            pydub.AudioSegment.from_wav(self.bw.audio_filename).export(filename, format="mp3") # pyright: ignore[reportUnknownMemberType]
         elif filename_ext == constants.AudioFormatCode.FLAC.value:
             # Use Pydub to export FLAC
-            pydub.AudioSegment.from_wav(self.bw.audio_filename).export(filename, format="flac")
+            pydub.AudioSegment.from_wav(self.bw.audio_filename).export(filename, format="flac") # pyright: ignore[reportUnknownMemberType]
 
-    def get_frame_count(self, fps):
+    def get_frame_count(self, fps: float) -> int:
         audio_duration = self.bw.get_audio_length() / 1000
         frame_count = round(audio_duration * fps)
 
         return frame_count
 
     def export_sequence(self,
-                        directory,
-                        fps,
-                        size=None,
-                        keep_aspect=False,
-                        image_format=None,
-                        progress_dialog=None
-                        ):
+                        directory: str,
+                        fps: float,
+                        size: tuple[int, int] | None = None,
+                        keep_aspect: bool = False,
+                        image_format: constants.ImageFormatCode | None = None,
+                        progress_dialog: QProgressDialog | None = None
+                        ) -> None:
         helpers.make_file_path(directory)
 
         frame_count = self.get_frame_count(fps)
@@ -370,25 +376,25 @@ class Renderer:
             progress_dialog.setValue(frame_count)
 
     def export_video(self,
-                     filename,
-                     fps,
-                     size=None,
-                     keep_aspect=False,
-                     progress_dialog=None,
-                     codec=None,
-                     audio_codec=None,
-                     bitrate=None,
-                     audio_bitrate=None,
-                     preset=None
-                     ):
+                     filename: str,
+                     fps: float,
+                     size: tuple[int, int] | None = None,
+                     keep_aspect: bool = False,
+                     progress_dialog: QProgressDialog | None = None,
+                     codec: str | None = None,
+                     audio_codec: str | None = None,
+                     bitrate: str | None = None,
+                     audio_bitrate: str | None = None,
+                     preset: str | None = None
+                     ) -> None:
         # Get temporary directory
         temp_dir = tempfile.mkdtemp()
 
         # Make file names
         image_dir = os.path.join(temp_dir, "images")
         audio_file = os.path.join(temp_dir, "audio.wav")
-        filename_main, filename_ext = os.path.splitext(filename)
-        filename_path, filename_title = os.path.split(filename)
+        _filename_main, filename_ext = os.path.splitext(filename)
+        filename_path, _filename_title = os.path.split(filename)
         video_file = os.path.join(temp_dir, f"video{filename_ext}")
 
         # Set progress dialog to not close when at max
@@ -421,7 +427,7 @@ class Renderer:
             custom_logger = "bar"
 
         # Make a list of the image filenames
-        frames_list = list()
+        frames_list: list[str] = list()
         for frame_filename in os.listdir(image_dir):
             full_frame_filename = os.path.join(image_dir, frame_filename)
             frames_list.append(full_frame_filename)
@@ -430,6 +436,7 @@ class Renderer:
         sequence_clip = ImageSequenceClip(frames_list, fps=fps)
         audio_clip = AudioFileClip(audio_file)
 
+        # TODO: Fix this
         video_clip = sequence_clip.set_audio(audio_clip)
         # TODO: Control quality settings
         # TODO: Set temp audio file location if possible

@@ -2,11 +2,13 @@ import os
 import shutil
 import tempfile
 import math
+from typing import IO, Any, Literal, cast
 import wave
 from PIL import Image, ImageOps
-import pydub
-from PyQt5.QtGui import QImage
+import pydub # pyright: ignore[reportMissingTypeStubs]
+from PyQt6.QtGui import QImage
 
+from .constants.enums import ColorFmtCode, ColorModeCode
 from . import constants, helpers
 
 
@@ -17,43 +19,43 @@ from . import constants, helpers
 #   to other code in order to produce the videos
 class BinaryWaterfall:
     def __init__(self,
-                 filename=None,
-                 width=constants.DEFAULTS["width"],
-                 height=constants.DEFAULTS["height"],
-                 color_format_string=constants.DEFAULTS["color_format_string"],
-                 num_channels=constants.DEFAULTS["num_channels"],
-                 sample_bytes=constants.DEFAULTS["sample_bytes"],
-                 sample_rate=constants.DEFAULTS["sample_rate"],
-                 volume=constants.DEFAULTS["file_volume"],
-                 flip_v=constants.DEFAULTS["flip_v"],
-                 flip_h=constants.DEFAULTS["flip_h"],
-                 alignment=constants.DEFAULTS["alignment"],
-                 playhead_visible=constants.DEFAULTS["playhead_visible"]
+                 filename: str | None = None,
+                 width: int = cast(int, constants.DEFAULTS["width"]),
+                 height: int = cast(int, constants.DEFAULTS["height"]),
+                 color_format_string: str = cast(str, constants.DEFAULTS["color_format_string"]),
+                 num_channels: int = cast(int, constants.DEFAULTS["num_channels"]),
+                 sample_bytes: int = cast(int, constants.DEFAULTS["sample_bytes"]),
+                 sample_rate: int = cast(int, constants.DEFAULTS["sample_rate"]),
+                 volume: float = cast(float, constants.DEFAULTS["file_volume"]),
+                 flip_v: bool = cast(bool, constants.DEFAULTS["flip_v"]),
+                 flip_h: bool = cast(bool, constants.DEFAULTS["flip_h"]),
+                 alignment: constants.AlignmentCode = cast(constants.AlignmentCode, constants.DEFAULTS["alignment"]),
+                 playhead_visible: bool = cast(bool, constants.DEFAULTS["playhead_visible"])
                  ):
         # Initialize class variables
-        self.audio_length_ms = None
-        self.volume = None
-        self.sample_rate = None
-        self.sample_bytes = None
-        self.num_channels = None
-        self.color_format = None
-        self.color_bytes = None
-        self.unused_color_bytes = None
-        self.used_color_bytes = None
-        self.filename = None
-        self.height = None
-        self.width = None
-        self.dim = None
-        self.total_bytes = None
-        self.file = None
-        self.audio_filename = None
-        self.flip_v = None
-        self.flip_h = None
-        self.alignment = None
-        self.playhead_visible = None
+        self.audio_length_ms: int | None = None
+        self.volume: float | None = None
+        self.sample_rate: int | None = None
+        self.sample_bytes: int | None = None
+        self.num_channels: int | None = None
+        self.color_format: list[constants.ColorFmtCode] | None = None
+        self.color_bytes: int | None = None
+        self.unused_color_bytes: int | None = None
+        self.used_color_bytes: int | None = None
+        self.filename: str | None = None
+        self.height: int | None = None
+        self.width: int | None = None
+        self.dim: tuple[int, int] | None = None
+        self.total_bytes: int | None = None
+        self.file: IO[bytes] | None = None
+        self.audio_filename: str | None = None
+        self.flip_v: bool | None = None
+        self.flip_h: bool | None = None
+        self.alignment: constants.AlignmentCode | None = None
+        self.playhead_visible: bool | None = None
 
         # Make the temp dir for the class instance
-        self.temp_dir = tempfile.mkdtemp()
+        self.temp_dir: str = tempfile.mkdtemp()
 
         # Set the filename in
         self.set_filename(filename=filename)
@@ -82,16 +84,16 @@ class BinaryWaterfall:
             volume=volume
         )
 
-    def __del__(self):
+    def __del__(self) -> None:
         self.cleanup()
 
-    def close_file(self):
+    def close_file(self) -> None:
         if self.file is not None:
             self.file.close()
             self.file = None
         self.filename = None
 
-    def set_filename(self, filename):
+    def set_filename(self, filename: str | None) -> None:
         # Delete current audio file if it exists
         self.delete_audio()
 
@@ -116,13 +118,13 @@ class BinaryWaterfall:
         self.file.seek(0)
 
         # Compute audio file name
-        file_path, file_main_name = os.path.split(self.filename)
+        _file_path, _file_main_name = os.path.split(self.filename)
         self.audio_filename = os.path.join(
             self.temp_dir,
-            file_main_name + os.path.extsep + "wav"
+            _file_main_name + os.path.extsep + "wav"
         )
 
-    def set_dims(self, width, height):
+    def set_dims(self, width: int, height: int) -> None:
         if width < 4:
             raise ValueError("Visualization width must be at least 4")
 
@@ -134,8 +136,8 @@ class BinaryWaterfall:
         self.dim = (self.width, self.height)
 
     @staticmethod
-    def parse_color_format(color_format_string):
-        result = {
+    def parse_color_format(color_format_string: str) -> dict[str, bool | str | list[Any] | int | Literal[ColorModeCode.GRAYSCALE, ColorModeCode.RGB]]:
+        result: dict[str, bool | str | list[Any] | int | Literal[ColorModeCode.GRAYSCALE, ColorModeCode.RGB]] = {
             "is_valid": True
         }
 
@@ -242,7 +244,7 @@ class BinaryWaterfall:
                 )
                 return result
 
-        color_format_list = list()
+        color_format_list: list[ColorFmtCode] = list()
         for c in color_format_string:
             color_format_list.append(constants.ColorFmtCode(c))
 
@@ -254,43 +256,44 @@ class BinaryWaterfall:
 
         return result
 
-    def set_color_format(self, color_format_string):
+    def set_color_format(self, color_format_string: str) -> None:
         parsed_string = self.parse_color_format(color_format_string)
 
         if not parsed_string["is_valid"]:
             raise ValueError(parsed_string["message"])
 
-        self.used_color_bytes = parsed_string["used_color_bytes"]
-        self.unused_color_bytes = parsed_string["unused_color_bytes"]
-        self.color_bytes = parsed_string["color_bytes"]
-        self.color_format = parsed_string["color_format"]
+        self.used_color_bytes = cast(int, parsed_string["used_color_bytes"])
+        self.unused_color_bytes = cast(int, parsed_string["unused_color_bytes"])
+        self.color_bytes = cast(int, parsed_string["color_bytes"])
+        self.color_format = cast(list[constants.ColorFmtCode], parsed_string["color_format"])
 
-    def get_color_format_string(self):
-        color_format_string = ""
+    def get_color_format_string(self) -> str:
+        color_format_string: str = ""
+        assert self.color_format is not None
         for x in self.color_format:
             color_format_string += x.value
 
         return color_format_string
 
-    def is_color_format_valid(self, color_format_string):
-        return self.parse_color_format(color_format_string)["is_valid"]
+    def is_color_format_valid(self, color_format_string: str) -> bool:
+        return cast(bool, self.parse_color_format(color_format_string)["is_valid"])
 
-    def set_flip(self, flip_v, flip_h):
+    def set_flip(self, flip_v: bool, flip_h: bool) -> None:
         self.flip_v = flip_v
         self.flip_h = flip_h
 
-    def set_alignment(self, alignment):
+    def set_alignment(self, alignment: constants.AlignmentCode) -> None:
         self.alignment = alignment
 
-    def set_playhead_visible(self, playhead_visible):
+    def set_playhead_visible(self, playhead_visible: bool) -> None:
         self.playhead_visible = playhead_visible
 
     def set_audio_settings(self,
-                           num_channels,
-                           sample_bytes,
-                           sample_rate,
-                           volume
-                           ):
+                           num_channels: int,
+                           sample_bytes: int,
+                           sample_rate: int,
+                           volume: float
+                           ) -> None:
         if num_channels not in [1, 2]:
             raise ValueError("Invalid number of audio channels, must be either 1 or 2")
 
@@ -311,7 +314,7 @@ class BinaryWaterfall:
         # Re-compute audio file
         self.compute_audio()
 
-    def delete_audio(self):
+    def delete_audio(self) -> None:
         if self.audio_filename is None:
             # Do nothing
             return
@@ -320,54 +323,70 @@ class BinaryWaterfall:
         except FileNotFoundError:
             pass
 
-    def get_audio_length(self):
-        audio_length = pydub.AudioSegment.from_file(self.audio_filename).duration_seconds
-        audio_length_ms = math.ceil(audio_length * 1000)
+    def get_audio_length(self) -> int:
+        assert self.audio_filename is not None
+        audio_length: int = pydub.AudioSegment.from_file(self.audio_filename).duration_seconds # pyright: ignore[reportUnknownVariableType, reportUnknownMemberType]
+        audio_length_ms = math.ceil(audio_length * 1000) # pyright: ignore[reportUnknownArgumentType]
 
         return audio_length_ms
 
-    def compute_audio(self):
+    def compute_audio(self) -> None:
         if self.filename is None:
             # If there is no file set, reset the vars
             self.audio_length_ms = None
             return
 
+        assert self.audio_filename is not None
+        assert self.num_channels is not None
+        assert self.sample_bytes is not None
+        assert self.sample_rate is not None
+        assert self.file is not None
+
         # Delete current file if it exists
         self.delete_audio()
 
         # Compute the new file (full volume)
-        with wave.open(self.audio_filename, "wb") as f:
+        with wave.open(self.audio_filename, "wb") as f: # pyright: ignore[reportCallIssue, reportArgumentType]
             f.setnchannels(self.num_channels)
             f.setsampwidth(self.sample_bytes)
             f.setframerate(self.sample_rate)
             self.file.seek(0)
-            for chunk in iter(lambda: self.file.read(4096), b""):
+            assert self.file is not None
+            for chunk in iter(lambda: self.file.read(4096), b""): # pyright: ignore[reportOptionalMemberAccess, reportUnknownLambdaType]
                 f.writeframesraw(chunk)
 
         if self.volume != 100:
+            assert self.volume is not None
             # Reduce the audio volume
             factor = self.volume / 100
-            audio = pydub.AudioSegment.from_file(file=self.audio_filename, format="wav")
-            audio += pydub.audio_segment.ratio_to_db(factor)
+            audio = pydub.AudioSegment.from_file(file=self.audio_filename, format="wav") # pyright: ignore[reportUnknownVariableType, reportUnknownMemberType]
+            audio += pydub.audio_segment.ratio_to_db(factor) # pyright: ignore[reportUnknownVariableType, reportUnknownMemberType]
             temp_filename = self.audio_filename + ".temp"
-            audio.export(temp_filename, format="wav")
+            audio.export(temp_filename, format="wav") # pyright: ignore[reportUnknownMemberType]
             self.delete_audio()
             shutil.move(temp_filename, self.audio_filename)
 
         # Get audio length
         self.audio_length_ms = self.get_audio_length()
 
-    def change_filename(self, new_filename):
+    def change_filename(self, new_filename: str | None) -> None:
         self.set_filename(new_filename)
         self.compute_audio()
 
-    def get_file_bytes(self, address, count):
+    def get_file_bytes(self, address: int, count: int) -> bytes:
+        assert self.file is not None
         self.file.seek(address)
         return self.file.read(count)
 
-    def get_address(self, ms):
+    def get_address(self, ms: int) -> int:
+        assert self.width is not None
+        assert self.color_bytes is not None
+        assert self.total_bytes is not None
+        assert self.audio_length_ms is not None
+        assert self.height is not None
+
         # Get the size of a single "block" (a row, we only move in increments of 1 row)
-        address_block_size = self.width * self.color_bytes
+        address_block_size: int = self.width * self.color_bytes
 
         # Get the total number of blocks (rows) in the file (round up because we don't want to clip a row off)
         total_blocks = math.ceil(self.total_bytes / address_block_size)
@@ -382,11 +401,12 @@ class BinaryWaterfall:
             address_block_index -= round(self.height / 2)
 
         # Get the base address (end of frame by default)
-        address = address_block_index * address_block_size
+        address: int = address_block_index * address_block_size
 
         return address
 
-    def get_playhead_row(self):
+    def get_playhead_row(self) -> int:
+        assert self.height is not None
         if self.alignment == constants.AlignmentCode.END:
             return 0
         elif self.alignment == constants.AlignmentCode.START:
@@ -395,7 +415,12 @@ class BinaryWaterfall:
             return round((self.height - 1) / 2)
 
     # A 1D Python byte string
-    def get_frame_bytestring(self, ms):
+    def get_frame_bytestring(self, ms: int) -> bytes:
+        assert self.width is not None
+        assert self.height is not None
+        assert self.color_bytes is not None
+        assert self.color_format is not None
+
         picture_bytes = bytes()
 
         address = self.get_address(ms)
@@ -410,11 +435,11 @@ class BinaryWaterfall:
             count=(self.width * self.height * self.color_bytes)
         )
 
-        full_length = (self.width * self.height * 3)
+        full_length: int = (self.width * self.height * 3)
 
         idx = 0
-        for row in range(self.height):
-            for col in range(self.width):
+        for _row in range(self.height):
+            for _col in range(self.width):
                 # If we already have a full frame, stop the loops
                 if len(picture_bytes) >= full_length:
                     break
@@ -453,18 +478,18 @@ class BinaryWaterfall:
         # Pad picture data if we don't have a full frame (near the end of the file)
         picture_bytes_length = len(picture_bytes)
         if picture_bytes_length < full_length:
-            pad_length = full_length - picture_bytes_length
+            pad_length: int = full_length - picture_bytes_length
             picture_bytes += b"\x00" * pad_length
 
         # Invert playhead row if needed
         if self.playhead_visible:
             playhead_row = self.get_playhead_row()
-            row_size = self.width * 3
-            playhead_start = playhead_row * row_size
-            playhead_end = playhead_start + row_size
+            row_size: int = self.width * 3
+            playhead_start: int = playhead_row * row_size
+            playhead_end: int = playhead_start + row_size
 
-            playhead = picture_bytes[playhead_start:playhead_end]
-            playhead_contrast = helpers.filter_rgb_bytes(playhead, helpers.pick_shade_from_luminance)
+            playhead: bytes = picture_bytes[playhead_start:playhead_end]
+            playhead_contrast = helpers.filter_rgb_bytes(playhead, helpers.pick_shade_from_luminance) # pyright: ignore[reportUnknownArgumentType]
 
             playhead = helpers.filter_rgb_bytes(playhead, helpers.invert)
             playhead = helpers.filter_rgb_bytes(playhead, helpers.desaturate)
@@ -476,7 +501,9 @@ class BinaryWaterfall:
         return picture_bytes
 
     # A PIL Image (RGB)
-    def get_frame_image(self, ms):
+    def get_frame_image(self, ms: int) -> Image.Image:
+        assert self.width is not None
+        assert self.height is not None
         frame_bytesring = self.get_frame_bytestring(ms)
         img = Image.frombytes("RGB", (self.width, self.height), frame_bytesring)
 
@@ -488,7 +515,9 @@ class BinaryWaterfall:
         return img
 
     # A QImage (RGB)
-    def get_frame_qimage(self, ms):
+    def get_frame_qimage(self, ms: int) -> QImage:
+        assert self.width is not None
+        assert self.height is not None
         frame_bytesring = self.get_frame_bytestring(ms)
         qimg = QImage(
             frame_bytesring,
@@ -499,11 +528,11 @@ class BinaryWaterfall:
         )
         if self.flip_v or self.flip_h:
             # Flip vertically
-            qimg = qimg.mirrored(horizontal=self.flip_h, vertical=self.flip_v)
+            qimg = qimg.mirrored(horizontal=self.flip_h, vertical=self.flip_v) # pyright: ignore[reportArgumentType]
 
         return qimg
 
-    def cleanup(self):
+    def cleanup(self) -> None:
         self.close_file()
         self.delete_audio()
         shutil.rmtree(self.temp_dir)
@@ -512,15 +541,15 @@ class BinaryWaterfall:
 # Watermarker class
 #   Handles watermarking images
 class Watermarker:
-    def __init__(self):
-        self.img = Image.open(constants.ICON_PATHS["watermark"]).convert("RGBA")
+    def __init__(self) -> None:
+        self.img: Image.Image = Image.open(constants.ICON_PATHS["watermark"]).convert("RGBA") # pyright: ignore[reportArgumentType]
 
-    def mark(self, image):
+    def mark(self, image: Image.Image) -> Image.Image:
         this_mark = self.img.copy()
         this_mark = helpers.fit_to_frame(
             image=this_mark,
             frame_size=image.size,
-            scaling=Image.BICUBIC,
+            scaling=Image.Resampling.BICUBIC,
             transparent=True
         )
 

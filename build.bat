@@ -1,9 +1,9 @@
 @echo off
 
-set MAINFAILENAME=binary-waterfall
+set MAINFAILENAME=binary-waterfall-unofficial
 set ENVNAME=%MAINFAILENAME%
 set BUILDENVNAME=build
-set MODULENAME=binary_waterfall
+set MODULENAME=binary_waterfall_unofficial
 
 set ORIGDIR=%CD%
 set SOURCEDIR=%ORIGDIR%\src\%MODULENAME%
@@ -43,6 +43,7 @@ call conda run -n %ENVNAME% pyinstaller ^
 	--add-data %SOURCEDIR%\version.yml;.\src\%MODULENAME% ^
 	--add-data %SOURCEDIR%\constants\*.py;.\src\%MODULENAME%\constants ^
 	--add-data %SOURCEDIR%\helpers\*.py;.\src\%MODULENAME%\helpers ^
+	--add-data %SOURCEDIR%\langs\*.py;.\src\%MODULENAME%\langs ^
 	--add-data %SOURCEDIR%\resources\*;.\src\%MODULENAME%\resources ^
     --onefile ^
     --icon=%ICON_ICO% ^

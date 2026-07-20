@@ -1,0 +1,142 @@
+{
+  "_meta": {
+    "name": "简体中文"
+  },
+  "menu": {
+    "file": "文件",
+    "settings": "设置",
+    "export": "导出",
+    "help": "帮助",
+    "language": "语言",
+    "title": "二进制瀑布（非官方增强版）"
+  },
+  "menu_file": {
+    "open": "打开...",
+    "close": "关闭"
+  },
+  "menu_settings": {
+    "audio": "音频...",
+    "video": "视频...",
+    "player": "播放器..."
+  },
+  "menu_export": {
+    "audio": "音频...",
+    "image": "图像...",
+    "image_sequence": "图像序列...",
+    "video": "视频..."
+  },
+  "menu_help": {
+    "hotkeys": "快捷键...",
+    "about": "关于..."
+  },
+  "dialog": {
+    "audio_settings": "音频设置",
+    "video_settings": "视频设置",
+    "player_settings": "播放器设置",
+    "export_image": "导出图像设置",
+    "export_sequence": "导出序列设置",
+    "export_video": "导出视频设置",
+    "encoder_settings": "视频编码器设置",
+    "hotkey_info": "快捷键信息",
+    "error": "错误",
+    "invalid_color_format": "无效的颜色格式",
+    "exporting_images": "正在导出图像...",
+    "exporting_video": "正在导出视频...",
+    "export_image_as": "将图像导出为...",
+    "export_audio_as": "将音频导出为...",
+    "export_video_as": "将视频导出为...",
+    "export_image_sequence_to": "将图像序列导出到...",
+    "open_file": "打开文件",
+    "no_file_error": "错误",
+    "no_file_error_detail": "查看器中没有打开的文件可导出。\n\n请打开一个文件后重试。",
+    "export_error": "导出错误",
+    "export_error_frame": "导出帧时发生错误：{error}",
+    "export_error_audio": "导出音频时发生错误：{error}",
+    "export_error_sequence": "导出图像序列时发生错误：{error}",
+    "export_error_video": "导出视频时发生错误：{error}",
+    "export_complete": "导出完成",
+    "export_complete_frame": "图像导出成功！",
+    "export_complete_audio": "音频导出成功！",
+    "export_complete_sequence": "图像序列导出成功！",
+    "export_complete_video": "视频导出成功！",
+    "export_aborted": "导出已中止",
+    "export_aborted_frame": "图像导出已中止！",
+    "export_aborted_sequence": "图像序列导出已中止！",
+    "export_aborted_video": "视频导出已中止！",
+    "rendering_frames": "正在渲染帧...",
+    "exporting_image_sequence": "正在导出图像序列...",
+    "all_binary_files": "所有二进制文件 (*)",
+    "png_files": "PNG",
+    "jpeg_files": "JPEG",
+    "bmp_files": "BMP",
+    "mp3_files": "MP3",
+    "wav_files": "WAV",
+    "flac_files": "FLAC",
+    "mp4_files": "MP4",
+    "avi_files": "AVI",
+    "abort": "中止",
+    "language_restart_title": "语言设置",
+    "language_restart_message": "语言已切换，重启应用后设置才会完全生效。",
+    "language_restart_ok": "确定",
+    "language_restart_restart_now": "立即重启",
+    "export_width": "导出宽度：",
+    "export_height": "导出高度：",
+    "aspect_ratio": "宽高比：",
+    "force": "强制",
+    "image_format": "图像格式：",
+    "fps": "帧率：",
+    "video_codec": "视频编码器：",
+    "audio_codec": "音频编码器：",
+    "encoder_preset": "编码器预设：",
+    "file_is_empty": "文件 {filename} 为空，无法进行解析。",
+    "feat_disabled": "功能已禁用",
+    "can_use_feat": "你现在不能使用此功能。"
+  },
+  "audio": {
+    "channels": "声道：",
+    "mono": "1（单声道）",
+    "stereo": "2（立体声）",
+    "sample_size": "采样大小：",
+    "sample_rate": "采样率：",
+    "file_volume": "文件音量："
+  },
+  "video": {
+    "width": "宽度：",
+    "height": "高度：",
+    "color_format": "颜色格式：",
+    "audio_alignment": "音频对齐：",
+    "frame_start": "帧起始",
+    "frame_center": "帧居中",
+    "frame_end": "帧结束",
+    "playhead": "播放头：",
+    "visible": "可见",
+    "flip_vertical": "垂直：",
+    "flip_horizontal": "水平：",
+    "flip": "翻转"
+  },
+  "player": {
+    "max_dimension": "最大尺寸：",
+    "fps": "帧率："
+  },
+  "hotkeys": {
+    "play_pause": "播放/暂停：",
+    "forward": "快进：",
+    "back": "后退：",
+    "frame_forward": "逐帧前进：",
+    "frame_back": "逐帧后退：",
+    "restart": "重新开始：",
+    "volume_up": "音量增加：",
+    "volume_down": "音量减少：",
+    "mute": "静音：",
+    "key_spacebar": "空格键",
+    "key_right": "右方向键",
+    "key_left": "左方向键",
+    "key_up": "上方向键",
+    "key_down": "下方向键"
+  },
+  "about": {
+    "o_project_home": "原项目主页：",
+    "m_project_home": "本更新版本项目主页：",
+    "o_donate": "给原作者捐赠："
+  }
+}

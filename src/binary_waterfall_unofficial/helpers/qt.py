@@ -1,23 +1,26 @@
-from proglog import ProgressBarLogger
+from __future__ import annotations
+from typing import Any
+from PyQt6.QtWidgets import QProgressDialog
+from proglog import ProgressBarLogger # pyright: ignore[reportMissingTypeStubs]
 
 
 # Custom proglog class for QProgressDialogs
 #   Handles updating the progress in a QProgressDialog
 #   Designed to work with moviepy's export option
 class QtBarLoggerMoviepy(ProgressBarLogger):
-    def __init__(self, progress_dialog, init_state=None, bars=None, ignored_bars=None,
-                 logged_bars='all', min_time_interval=0, ignore_bars_under=0):
-        super().__init__(init_state, bars, ignored_bars, logged_bars, min_time_interval, ignore_bars_under)
+    def __init__(self, progress_dialog: QProgressDialog, init_state: dict[str, Any] | None = None, bars: dict[str, Any] | None = None, ignored_bars: list[str] | None = None,
+                 logged_bars: str = 'all', min_time_interval: int = 0, ignore_bars_under: int = 0):
+        super().__init__(init_state, bars, ignored_bars, logged_bars, min_time_interval, ignore_bars_under) # pyright: ignore[reportUnknownMemberType]
         self.progress_dialog = progress_dialog
         self.progress_dialog.setMaximum(100)
         self.set_progress(0)
 
-    def set_progress(self, value):
+    def set_progress(self, value: int) -> None:
         self.progress_dialog.setValue(value)
 
-    def callback(self, **changes):
+    def callback(self, **changes: Any) -> None:
         if "message" in changes:
-            message = changes["message"].strip("Moviepy - ")
+            message: str = changes["message"].strip("Moviepy - ")
 
             if "Building video" in message:
                 self.progress_dialog.setLabelText("(1/3) Building video...")
@@ -34,6 +37,6 @@ class QtBarLoggerMoviepy(ProgressBarLogger):
             else:
                 self.progress_dialog.setLabelText(message)
 
-    def bars_callback(self, bar, attr, value, old_value=None):
-        self.progress_dialog.setMaximum(self.bars[bar]["total"])
+    def bars_callback(self, bar: str, attr: str, value: int, old_value: int | None = None) -> None:
+        self.progress_dialog.setMaximum(self.bars[bar]["total"]) # pyright: ignore[reportUnknownMemberType, reportUnknownArgumentType]
         self.set_progress(value)

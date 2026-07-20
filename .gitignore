@@ -154,4 +154,9 @@ cython_debug/
 *.exe
 
 .idea/*
+.vscode/*
+
 file_version_info.txt
+
+# CMD
+*.cmd

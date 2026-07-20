@@ -1,16 +1,16 @@
-name: binary-waterfall
+name: binary-waterfall-unofficial
 channels:
-  - defaults
-  - conda-forge
+- defaults
+- conda-forge
 dependencies:
-  - python=3.10*
-  - pip
-  - ffmpeg
-  - pip:
-    - pyinstaller
-    - pyinstaller-versionfile
-    - PyQt5
-    - pydub
-    - Pillow
-    - moviepy
-    - proglog
+- python=3.13*
+- pip
+- ffmpeg
+- pip:
+  - pyinstaller
+  - pyinstaller-versionfile
+  - PyQt6
+  - pydub
+  - Pillow
+  - moviepy
+  - proglog

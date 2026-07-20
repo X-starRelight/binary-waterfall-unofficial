@@ -5,7 +5,7 @@ from . import paths
 
 # Read program version file
 VERSION_FILE = os.path.join(paths.PATH, "version.yml")
-with open(VERSION_FILE, "r") as f:
+with open(VERSION_FILE, "r", encoding="UTF-8") as f:
     version_file_dict = yaml.safe_load(f)
 
     VERSION = version_file_dict["Version"]

@@ -1,7 +1,7 @@
 from PIL import Image
 
 
-def get_size_for_fit_frame(content_size, frame_size):
+def get_size_for_fit_frame(content_size: tuple[int, int], frame_size: tuple[int, int]):
     content_width, content_height = content_size
     frame_width, frame_height = frame_size
 
@@ -33,17 +33,17 @@ def get_size_for_fit_frame(content_size, frame_size):
 
 
 def fit_to_frame(
-        image,
-        frame_size,
-        scaling=Image.NEAREST,
-        transparent=False
+        image: Image.Image,
+        frame_size: tuple[int, int],
+        scaling: int=Image.NEAREST, # pyright: ignore[reportAttributeAccessIssue, reportUnknownMemberType]
+        transparent: bool=False
 ):
     # Get new content size
     fit_settings = get_size_for_fit_frame(
         content_size=image.size,
         frame_size=frame_size
     )
-    content_size = fit_settings["size"]
+    content_size: tuple[int, int] = fit_settings["size"] # pyright: ignore[reportAssignmentType]
 
     content_width, content_height = content_size
     frame_width, frame_height = frame_size

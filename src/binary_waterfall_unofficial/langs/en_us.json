@@ -1,0 +1,142 @@
+{
+  "_meta": {
+    "name": "English"
+  },
+  "menu": {
+    "file": "File",
+    "settings": "Settings",
+    "export": "Export",
+    "help": "Help",
+    "language": "Language",
+    "title": "Binary Waterfall (Unofficial Enhanced Fork)"
+  },
+  "menu_file": {
+    "open": "Open...",
+    "close": "Close"
+  },
+  "menu_settings": {
+    "audio": "Audio...",
+    "video": "Video...",
+    "player": "Player..."
+  },
+  "menu_export": {
+    "audio": "Audio...",
+    "image": "Image...",
+    "image_sequence": "Image Sequence...",
+    "video": "Video..."
+  },
+  "menu_help": {
+    "hotkeys": "Hotkeys...",
+    "about": "About..."
+  },
+  "dialog": {
+    "audio_settings": "Audio Settings",
+    "video_settings": "Video Settings",
+    "player_settings": "Player Settings",
+    "export_image": "Export Image Settings",
+    "export_sequence": "Export Sequence Settings",
+    "export_video": "Export Video Settings",
+    "encoder_settings": "Video Encoder Settings",
+    "hotkey_info": "Hotkey Info",
+    "error": "Error",
+    "invalid_color_format": "Invalid Color Format",
+    "exporting_images": "Exporting Images...",
+    "exporting_video": "Exporting Video...",
+    "export_image_as": "Export Image As...",
+    "export_audio_as": "Export Audio As...",
+    "export_video_as": "Export Video As...",
+    "export_image_sequence_to": "Export Image Sequence To...",
+    "open_file": "Open File",
+    "no_file_error": "Error",
+    "no_file_error_detail": "There is no file open in the viewer to export.\n\nPlease open a file and try again.",
+    "export_error": "Export Error",
+    "export_error_frame": "An error occurred while exporting the frame: {error}",
+    "export_error_audio": "An error occurred while exporting the audio: {error}",
+    "export_error_sequence": "An error occurred while exporting the image sequence: {error}",
+    "export_error_video": "An error occurred while exporting the video: {error}",
+    "export_complete": "Export Complete",
+    "export_complete_frame": "Export image successful!",
+    "export_complete_audio": "Export audio successful!",
+    "export_complete_sequence": "Export image sequence successful!",
+    "export_complete_video": "Export video successful!",
+    "export_aborted": "Export Aborted",
+    "export_aborted_frame": "Export image aborted!",
+    "export_aborted_sequence": "Export image sequence aborted!",
+    "export_aborted_video": "Export video aborted!",
+    "rendering_frames": "Rendering frames...",
+    "exporting_image_sequence": "Exporting image sequence...",
+    "all_binary_files": "All Binary Files (*)",
+    "png_files": "PNG",
+    "jpeg_files": "JPEG",
+    "bmp_files": "BMP",
+    "mp3_files": "MP3",
+    "wav_files": "WAV",
+    "flac_files": "FLAC",
+    "mp4_files": "MP4",
+    "avi_files": "AVI",
+    "abort": "Abort",
+    "language_restart_title": "Language Settings",
+    "language_restart_message": "Language has been switched. The setting will take full effect after restarting the application.",
+    "language_restart_ok": "OK",
+    "language_restart_restart_now": "Restart Now",
+    "export_width": "Export Width:",
+    "export_height": "Export Height:",
+    "aspect_ratio": "Aspect Ratio:",
+    "force": "Force",
+    "image_format": "Image Format:",
+    "fps": "FPS:",
+    "video_codec": "Video Codec:",
+    "audio_codec": "Audio Codec:",
+    "encoder_preset": "Encoder Preset:",
+    "file_is_empty": "The file {filename} is empty and can't be parsed.",
+    "feat_disabled": "Feature Disabled",
+    "can_use_feat": "You can't use this feature right now."
+  },
+  "audio": {
+    "channels": "Channels:",
+    "mono": "1 (mono)",
+    "stereo": "2 (stereo)",
+    "sample_size": "Sample Size:",
+    "sample_rate": "Sample Rate:",
+    "file_volume": "File Volume:"
+  },
+  "video": {
+    "width": "Width:",
+    "height": "Height:",
+    "color_format": "Color Format:",
+    "audio_alignment": "Audio Alignment:",
+    "frame_start": "Frame Start",
+    "frame_center": "Frame Center",
+    "frame_end": "Frame End",
+    "playhead": "Playhead:",
+    "visible": "Visible",
+    "flip_vertical": "Vertical:",
+    "flip_horizontal": "Horizontal:",
+    "flip": "Flip"
+  },
+  "player": {
+    "max_dimension": "Max. Dimension:",
+    "fps": "FPS:"
+  },
+  "hotkeys": {
+    "play_pause": "Play / Pause:",
+    "forward": "Forward:",
+    "back": "Back:",
+    "frame_forward": "Frame Forward:",
+    "frame_back": "Frame Back:",
+    "restart": "Restart:",
+    "volume_up": "Volume Up:",
+    "volume_down": "Volume Down:",
+    "mute": "Mute:",
+    "key_spacebar": "Spacebar",
+    "key_right": "Right",
+    "key_left": "Left",
+    "key_up": "Up",
+    "key_down": "Down"
+  },
+  "about": {
+    "o_project_home": "Original project homepage:",
+    "m_project_home": "Updated version homepage:",
+    "o_donate": "Donate to the original author:"
+  }
+}

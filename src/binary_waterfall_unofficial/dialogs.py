@@ -1,53 +1,58 @@
-import os
-import webbrowser
-from PyQt5.QtCore import Qt
-from PyQt5.QtWidgets import (
-    QGridLayout, QLabel, QPushButton, QDialog, QDialogButtonBox, QComboBox, QLineEdit, QCheckBox, QSpinBox,
-    QDoubleSpinBox, QMessageBox
-)
-from PyQt5.QtGui import QPixmap, QIcon
+from __future__ import annotations
 
+from typing import Any
+
+from PyQt6.QtCore import Qt
+from PyQt6.QtWidgets import (
+    QGridLayout, QLabel, QDialog, QDialogButtonBox, QComboBox, QLineEdit, QCheckBox, QSpinBox,
+    QDoubleSpinBox, QMessageBox, QWidget
+)
+from PyQt6.QtGui import QPixmap, QIcon
+
+from .constants.enums import AlignmentCode, AudioCodecCode, EncoderPresetCode, ImageFormatCode, VideoCodecCode
 from . import constants
+from .lang import L
 
 
 # Audio settings input window
 #   User interface to set the audio settings (for computation)
 class AudioSettings(QDialog):
     def __init__(self,
-                 num_channels,
-                 sample_bytes,
-                 sample_rate,
-                 volume,
-                 parent=None
-                 ):
+                 num_channels: int,
+                 sample_bytes: int,
+                 sample_rate: int,
+                 volume: int,
+                 parent: QWidget | None = None
+                 ) -> None:
         super().__init__(parent=parent)
-        self.setWindowTitle("Audio Settings")
+        
+        self.setWindowTitle(L.dialog.audio_settings)
         self.setWindowIcon(QIcon(constants.ICON_PATHS["program"]))
 
         # Hide "?" button
-        self.setWindowFlags(self.windowFlags() ^ Qt.WindowContextHelpButtonHint)
+        self.setWindowFlags(self.windowFlags() ^ Qt.WindowType.WindowContextHelpButtonHint)
 
         self.num_channels = num_channels
         self.sample_bytes = sample_bytes
         self.sample_rate = sample_rate
         self.volume = volume
 
-        self.channels_label = QLabel("Channels:")
+        self.channels_label = QLabel(L.audio.channels)
         self.channels_label.setAlignment(Qt.AlignmentFlag.AlignVCenter | Qt.AlignmentFlag.AlignRight)
 
         self.channels_entry = QComboBox()
-        self.channels_entry.addItems(["1 (mono)", "2 (stereo)"])
+        self.channels_entry.addItems([L.audio.mono, L.audio.stereo]) # pyright: ignore[reportUnknownMemberType]
         if self.num_channels == 1:
             self.channels_entry.setCurrentIndex(0)
         elif self.num_channels == 2:
             self.channels_entry.setCurrentIndex(1)
-        self.channels_entry.currentIndexChanged.connect(self.channel_entry_changed)
+        self.channels_entry.currentIndexChanged.connect(self.channel_entry_changed) # pyright: ignore[reportUnknownMemberType]
 
-        self.sample_size_label = QLabel("Sample Size:")
+        self.sample_size_label = QLabel(L.audio.sample_size)
         self.sample_size_label.setAlignment(Qt.AlignmentFlag.AlignVCenter | Qt.AlignmentFlag.AlignRight)
 
         self.sample_size_entry = QComboBox()
-        self.sample_size_entry.addItems(["8-bit", "16-bit", "24-bit", "32-bit"])
+        self.sample_size_entry.addItems(["8-bit", "16-bit", "24-bit", "32-bit"]) # pyright: ignore[reportUnknownMemberType]
         if self.sample_bytes == 1:
             self.sample_size_entry.setCurrentIndex(0)
         elif self.sample_bytes == 2:
@@ -56,9 +61,9 @@ class AudioSettings(QDialog):
             self.sample_size_entry.setCurrentIndex(2)
         elif self.sample_bytes == 4:
             self.sample_size_entry.setCurrentIndex(3)
-        self.sample_size_entry.currentIndexChanged.connect(self.sample_size_entry_changed)
+        self.sample_size_entry.currentIndexChanged.connect(self.sample_size_entry_changed) # pyright: ignore[reportUnknownMemberType]
 
-        self.sample_rate_label = QLabel("Sample Rate:")
+        self.sample_rate_label = QLabel(L.audio.sample_rate)
         self.sample_rate_label.setAlignment(Qt.AlignmentFlag.AlignVCenter | Qt.AlignmentFlag.AlignRight)
 
         self.sample_rate_entry = QSpinBox()
@@ -67,9 +72,9 @@ class AudioSettings(QDialog):
         self.sample_rate_entry.setSingleStep(1000)
         self.sample_rate_entry.setSuffix("Hz")
         self.sample_rate_entry.setValue(self.sample_rate)
-        self.sample_rate_entry.valueChanged.connect(self.sample_rate_entry_changed)
+        self.sample_rate_entry.valueChanged.connect(self.sample_rate_entry_changed) # pyright: ignore[reportUnknownMemberType]
 
-        self.volume_label = QLabel("File Volume:")
+        self.volume_label = QLabel(L.audio.file_volume)
         self.volume_label.setAlignment(Qt.AlignmentFlag.AlignVCenter | Qt.AlignmentFlag.AlignRight)
 
         self.volume_entry = QSpinBox()
@@ -78,11 +83,11 @@ class AudioSettings(QDialog):
         self.volume_entry.setSingleStep(5)
         self.volume_entry.setSuffix("%")
         self.volume_entry.setValue(self.volume)
-        self.volume_entry.valueChanged.connect(self.volume_entry_changed)
+        self.volume_entry.valueChanged.connect(self.volume_entry_changed) # pyright: ignore[reportUnknownMemberType]
 
-        self.confirm_buttons = QDialogButtonBox(QDialogButtonBox.Ok | QDialogButtonBox.Cancel)
-        self.confirm_buttons.accepted.connect(self.accept)
-        self.confirm_buttons.rejected.connect(self.reject)
+        self.confirm_buttons = QDialogButtonBox(QDialogButtonBox.StandardButton.Ok | QDialogButtonBox.StandardButton.Cancel)
+        self.confirm_buttons.accepted.connect(self.accept) # pyright: ignore[reportUnknownMemberType]
+        self.confirm_buttons.rejected.connect(self.reject) # pyright: ignore[reportUnknownMemberType]
 
         self.main_layout = QGridLayout()
 
@@ -100,8 +105,8 @@ class AudioSettings(QDialog):
 
         self.resize_window()
 
-    def get_audio_settings(self):
-        result = dict()
+    def get_audio_settings(self) -> dict[str, int]:
+        result: dict[str, int] = dict()
         result["num_channels"] = self.num_channels
         result["sample_bytes"] = self.sample_bytes
         result["sample_rate"] = self.sample_rate
@@ -109,13 +114,13 @@ class AudioSettings(QDialog):
 
         return result
 
-    def channel_entry_changed(self, idx):
+    def channel_entry_changed(self, idx: int) -> None:
         if idx == 0:
             self.num_channels = 1
         elif idx == 1:
             self.num_channels = 2
 
-    def sample_size_entry_changed(self, idx):
+    def sample_size_entry_changed(self, idx: int) -> None:
         if idx == 0:
             self.sample_bytes = 1
         elif idx == 1:
@@ -125,13 +130,13 @@ class AudioSettings(QDialog):
         elif idx == 3:
             self.sample_bytes = 4
 
-    def sample_rate_entry_changed(self, value):
+    def sample_rate_entry_changed(self, value: int) -> None:
         self.sample_rate = value
 
-    def volume_entry_changed(self, value):
+    def volume_entry_changed(self, value: int) -> None:
         self.volume = value
 
-    def resize_window(self):
+    def resize_window(self) -> None:
         self.setFixedSize(self.sizeHint())
 
 
@@ -139,34 +144,35 @@ class AudioSettings(QDialog):
 #   User interface to set the video settings (for computation)
 class VideoSettings(QDialog):
     def __init__(self,
-                 bw,
-                 width,
-                 height,
-                 color_format,
-                 flip_v,
-                 flip_h,
-                 alignment,
-                 playhead_visible,
-                 parent=None
-                 ):
+                 bw: Any,
+                 width: int,
+                 height: int,
+                 color_format: str,
+                 flip_v: bool,
+                 flip_h: bool,
+                 alignment: constants.AlignmentCode,
+                 playhead_visible: bool,
+                 parent: QWidget | None = None
+                 ) -> None:
         super().__init__(parent=parent)
-        self.setWindowTitle("Video Settings")
+        
+        self.setWindowTitle(L.dialog.video_settings)
         self.setWindowIcon(QIcon(constants.ICON_PATHS["program"]))
 
         # Hide "?" button
-        self.setWindowFlags(self.windowFlags() ^ Qt.WindowContextHelpButtonHint)
+        self.setWindowFlags(self.windowFlags() ^ Qt.WindowType.WindowContextHelpButtonHint)
 
         self.bw = bw
 
-        self.width = width
-        self.height = height
+        self.entry_width = width
+        self.entry_height = height
         self.color_format = color_format
         self.flip_v = flip_v
         self.flip_h = flip_h
         self.alignment = alignment
         self.playhead_visible = playhead_visible
 
-        self.width_label = QLabel("Width:")
+        self.width_label = QLabel(L.video.width)
         self.width_label.setAlignment(Qt.AlignmentFlag.AlignVCenter | Qt.AlignmentFlag.AlignRight)
 
         self.width_entry = QSpinBox()
@@ -174,10 +180,10 @@ class VideoSettings(QDialog):
         self.width_entry.setMaximum(1024)
         self.width_entry.setSingleStep(4)
         self.width_entry.setSuffix("px")
-        self.width_entry.setValue(self.width)
-        self.width_entry.valueChanged.connect(self.width_entry_changed)
+        self.width_entry.setValue(self.entry_width)
+        self.width_entry.valueChanged.connect(self.width_entry_changed)# pyright: ignore[reportUnknownMemberType]
 
-        self.height_label = QLabel("Height:")
+        self.height_label = QLabel(L.video.height)
         self.height_label.setAlignment(Qt.AlignmentFlag.AlignVCenter | Qt.AlignmentFlag.AlignRight)
 
         self.height_entry = QSpinBox()
@@ -185,54 +191,54 @@ class VideoSettings(QDialog):
         self.height_entry.setMaximum(1024)
         self.height_entry.setSingleStep(4)
         self.height_entry.setSuffix("px")
-        self.height_entry.setValue(self.height)
-        self.height_entry.valueChanged.connect(self.height_entry_changed)
+        self.height_entry.setValue(self.entry_height)
+        self.height_entry.valueChanged.connect(self.height_entry_changed) # pyright: ignore[reportUnknownMemberType]
 
-        self.color_format_label = QLabel("Color Format:")
+        self.color_format_label = QLabel(L.video.color_format)
         self.color_format_label.setAlignment(Qt.AlignmentFlag.AlignVCenter | Qt.AlignmentFlag.AlignRight)
 
         self.color_format_entry = QLineEdit()
         self.color_format_entry.setMaxLength(64)
         self.color_format_entry.setText(self.color_format)
-        self.color_format_entry.editingFinished.connect(self.color_format_entry_changed)
+        self.color_format_entry.editingFinished.connect(self.color_format_entry_changed) # pyright: ignore[reportUnknownMemberType]
 
-        self.alignment_label = QLabel("Audio Alignment::")
+        self.alignment_label = QLabel(L.video.audio_alignment)
         self.alignment_label.setAlignment(Qt.AlignmentFlag.AlignVCenter | Qt.AlignmentFlag.AlignRight)
 
         self.alignment_entry = QComboBox()
-        self.alignment_entry.addItems(["Frame Start", "Frame Center", "Frame End"])
+        self.alignment_entry.addItems([L.video.frame_start, L.video.frame_center, L.video.frame_end]) # pyright: ignore[reportUnknownMemberType]
         if self.alignment == constants.AlignmentCode.START:
             self.alignment_entry.setCurrentIndex(0)
         elif self.alignment == constants.AlignmentCode.MIDDLE:
             self.alignment_entry.setCurrentIndex(1)
         elif self.alignment == constants.AlignmentCode.END:
             self.alignment_entry.setCurrentIndex(2)
-        self.alignment_entry.currentIndexChanged.connect(self.alignment_entry_changed)
+        self.alignment_entry.currentIndexChanged.connect(self.alignment_entry_changed) # pyright: ignore[reportUnknownMemberType]
 
-        self.playhead_entry_label = QLabel("Playhead:")
+        self.playhead_entry_label = QLabel(L.video.playhead)
         self.playhead_entry_label.setAlignment(Qt.AlignmentFlag.AlignVCenter | Qt.AlignmentFlag.AlignRight)
 
-        self.playhead_entry = QCheckBox("Visible")
+        self.playhead_entry = QCheckBox(L.video.visible)
         self.playhead_entry.setChecked(self.playhead_visible)
-        self.playhead_entry.stateChanged.connect(self.playhead_entry_changed)
+        self.playhead_entry.stateChanged.connect(self.playhead_entry_changed) # pyright: ignore[reportUnknownMemberType]
 
-        self.flip_v_entry_label = QLabel("Vertical:")
+        self.flip_v_entry_label = QLabel(L.video.flip_vertical)
         self.flip_v_entry_label.setAlignment(Qt.AlignmentFlag.AlignVCenter | Qt.AlignmentFlag.AlignRight)
 
-        self.flip_v_entry = QCheckBox("Flip")
+        self.flip_v_entry = QCheckBox(L.video.flip)
         self.flip_v_entry.setChecked(self.flip_v)
-        self.flip_v_entry.stateChanged.connect(self.flip_v_entry_changed)
+        self.flip_v_entry.stateChanged.connect(self.flip_v_entry_changed) # pyright: ignore[reportUnknownMemberType]
 
-        self.flip_h_entry_label = QLabel("Horizontal:")
+        self.flip_h_entry_label = QLabel(L.video.flip_horizontal)
         self.flip_h_entry_label.setAlignment(Qt.AlignmentFlag.AlignVCenter | Qt.AlignmentFlag.AlignRight)
 
-        self.flip_h_entry = QCheckBox("Flip")
+        self.flip_h_entry = QCheckBox(L.video.flip)
         self.flip_h_entry.setChecked(self.flip_h)
-        self.flip_h_entry.stateChanged.connect(self.flip_h_entry_changed)
+        self.flip_h_entry.stateChanged.connect(self.flip_h_entry_changed) # pyright: ignore[reportUnknownMemberType]
 
-        self.confirm_buttons = QDialogButtonBox(QDialogButtonBox.Ok | QDialogButtonBox.Cancel)
-        self.confirm_buttons.accepted.connect(self.accept)
-        self.confirm_buttons.rejected.connect(self.reject)
+        self.confirm_buttons = QDialogButtonBox(QDialogButtonBox.StandardButton.Ok | QDialogButtonBox.StandardButton.Cancel)
+        self.confirm_buttons.accepted.connect(self.accept) # pyright: ignore[reportUnknownMemberType]
+        self.confirm_buttons.rejected.connect(self.reject) # pyright: ignore[reportUnknownMemberType]
 
         self.main_layout = QGridLayout()
 
@@ -256,10 +262,10 @@ class VideoSettings(QDialog):
 
         self.resize_window()
 
-    def get_video_settings(self):
-        result = dict()
-        result["width"] = self.width
-        result["height"] = self.height
+    def get_video_settings(self) -> dict[str, int | str | bool | AlignmentCode]:
+        result: dict[str, int | str | bool | AlignmentCode] = dict()
+        result["width"] = self.entry_width
+        result["height"] = self.entry_height
         result["color_format"] = self.color_format
         result["flip_v"] = self.flip_v
         result["flip_h"] = self.flip_h
@@ -268,13 +274,13 @@ class VideoSettings(QDialog):
 
         return result
 
-    def width_entry_changed(self, value):
-        self.width = value
+    def width_entry_changed(self, value: int) -> None:
+        self.entry_width = value
 
-    def height_entry_changed(self, value):
-        self.height = value
+    def height_entry_changed(self, value: int) -> None:
+        self.entry_height = value
 
-    def color_format_entry_changed(self):
+    def color_format_entry_changed(self) -> None:
         color_format = self.color_format_entry.text()
         parsed = self.bw.parse_color_format(color_format)
         if parsed["is_valid"]:
@@ -283,32 +289,33 @@ class VideoSettings(QDialog):
             self.color_format_entry.setText(self.color_format)
             self.color_format_entry.setFocus()
 
+            
             error_popup = QMessageBox(parent=self)
-            error_popup.setIcon(QMessageBox.Critical)
-            error_popup.setText("Invalid Color Format")
+            error_popup.setIcon(QMessageBox.Icon.Critical)
+            error_popup.setText(L.dialog.invalid_color_format)
             error_popup.setInformativeText(parsed["message"])
-            error_popup.setWindowTitle("Error")
+            error_popup.setWindowTitle(L.dialog.error)
             error_popup.exec()
 
-    def playhead_entry_changed(self, value):
+    def playhead_entry_changed(self, value: int) -> None:
         if value == 0:
             self.playhead_visible = False
         else:
             self.playhead_visible = True
 
-    def flip_v_entry_changed(self, value):
+    def flip_v_entry_changed(self, value: int) -> None:
         if value == 0:
             self.flip_v = False
         else:
             self.flip_v = True
 
-    def flip_h_entry_changed(self, value):
+    def flip_h_entry_changed(self, value: int) -> None:
         if value == 0:
             self.flip_h = False
         else:
             self.flip_h = True
 
-    def alignment_entry_changed(self, idx):
+    def alignment_entry_changed(self, idx: int) -> None:
         if idx == 0:
             self.alignment = constants.AlignmentCode.START
         elif idx == 1:
@@ -316,7 +323,7 @@ class VideoSettings(QDialog):
         elif idx == 2:
             self.alignment = constants.AlignmentCode.END
 
-    def resize_window(self):
+    def resize_window(self) -> None:
         self.setFixedSize(self.sizeHint())
 
 
@@ -324,21 +331,22 @@ class VideoSettings(QDialog):
 #   User interface to set the player settings (for playback)
 class PlayerSettings(QDialog):
     def __init__(self,
-                 max_view_dim,
-                 fps,
-                 parent=None
-                 ):
+                 max_view_dim: int,
+                 fps: int,
+                 parent: QWidget | None = None
+                 ) -> None:
         super().__init__(parent=parent)
-        self.setWindowTitle("Player Settings")
+        
+        self.setWindowTitle(L.dialog.player_settings)
         self.setWindowIcon(QIcon(constants.ICON_PATHS["program"]))
 
         # Hide "?" button
-        self.setWindowFlags(self.windowFlags() ^ Qt.WindowContextHelpButtonHint)
+        self.setWindowFlags(self.windowFlags() ^ Qt.WindowType.WindowContextHelpButtonHint)
 
         self.max_view_dim = max_view_dim
         self.fps = fps
 
-        self.max_dim_label = QLabel("Max. Dimension:")
+        self.max_dim_label = QLabel(L.player.max_dimension)
         self.max_dim_label.setAlignment(Qt.AlignmentFlag.AlignVCenter | Qt.AlignmentFlag.AlignRight)
 
         self.max_dim_entry = QSpinBox()
@@ -347,9 +355,9 @@ class PlayerSettings(QDialog):
         self.max_dim_entry.setSingleStep(64)
         self.max_dim_entry.setSuffix("px")
         self.max_dim_entry.setValue(self.max_view_dim)
-        self.max_dim_entry.valueChanged.connect(self.max_dim_entry_changed)
+        self.max_dim_entry.valueChanged.connect(self.max_dim_entry_changed) # pyright: ignore[reportUnknownMemberType]
 
-        self.fps_label = QLabel("Framerate:")
+        self.fps_label = QLabel(L.player.fps)
         self.fps_label.setAlignment(Qt.AlignmentFlag.AlignVCenter | Qt.AlignmentFlag.AlignRight)
 
         self.fps_entry = QSpinBox()
@@ -358,11 +366,11 @@ class PlayerSettings(QDialog):
         self.fps_entry.setSingleStep(1)
         self.fps_entry.setSuffix("fps")
         self.fps_entry.setValue(self.fps)
-        self.fps_entry.valueChanged.connect(self.fps_entry_changed)
+        self.fps_entry.valueChanged.connect(self.fps_entry_changed) # pyright: ignore[reportUnknownMemberType]
 
-        self.confirm_buttons = QDialogButtonBox(QDialogButtonBox.Ok | QDialogButtonBox.Cancel)
-        self.confirm_buttons.accepted.connect(self.accept)
-        self.confirm_buttons.rejected.connect(self.reject)
+        self.confirm_buttons = QDialogButtonBox(QDialogButtonBox.StandardButton.Ok | QDialogButtonBox.StandardButton.Cancel)
+        self.confirm_buttons.accepted.connect(self.accept) # pyright: ignore[reportUnknownMemberType]
+        self.confirm_buttons.rejected.connect(self.reject) # pyright: ignore[reportUnknownMemberType]
 
         self.main_layout = QGridLayout()
 
@@ -376,20 +384,20 @@ class PlayerSettings(QDialog):
 
         self.resize_window()
 
-    def get_player_settings(self):
-        result = dict()
+    def get_player_settings(self) -> dict[str, int]:
+        result: dict[str, int] = dict()
         result["max_view_dim"] = self.max_view_dim
         result["fps"] = self.fps
 
         return result
 
-    def max_dim_entry_changed(self, value):
+    def max_dim_entry_changed(self, value: int) -> None:
         self.max_view_dim = value
 
-    def fps_entry_changed(self, value):
+    def fps_entry_changed(self, value: int) -> None:
         self.fps = value
 
-    def resize_window(self):
+    def resize_window(self) -> None:
         self.setFixedSize(self.sizeHint())
 
 
@@ -397,22 +405,22 @@ class PlayerSettings(QDialog):
 #   User interface to export a single frame
 class ExportFrame(QDialog):
     def __init__(self,
-                 width,
-                 height,
-                 parent=None
-                 ):
+                 width: int,
+                 height: int,
+                 parent: QWidget | None = None
+                 ) -> None:
         super().__init__(parent=parent)
-        self.setWindowTitle("Export Image Settings")
+        self.setWindowTitle(L.dialog.export_image)
         self.setWindowIcon(QIcon(constants.ICON_PATHS["program"]))
 
         # Hide "?" button
-        self.setWindowFlags(self.windowFlags() ^ Qt.WindowContextHelpButtonHint)
+        self.setWindowFlags(self.windowFlags() ^ Qt.WindowType.WindowContextHelpButtonHint)
 
-        self.width = width
-        self.height = height
+        self.entry_width = width
+        self.entry_height = height
         self.keep_aspect = False
 
-        self.width_label = QLabel("Export Width:")
+        self.width_label = QLabel(L.dialog.export_width)
         self.width_label.setAlignment(Qt.AlignmentFlag.AlignVCenter | Qt.AlignmentFlag.AlignRight)
 
         self.width_entry = QSpinBox()
@@ -420,10 +428,10 @@ class ExportFrame(QDialog):
         self.width_entry.setMaximum(7680)
         self.width_entry.setSingleStep(64)
         self.width_entry.setSuffix("px")
-        self.width_entry.setValue(self.width)
-        self.width_entry.valueChanged.connect(self.width_entry_changed)
+        self.width_entry.setValue(self.entry_width)
+        self.width_entry.valueChanged.connect(self.width_entry_changed) # pyright: ignore[reportUnknownMemberType]
 
-        self.height_label = QLabel("Export Height:")
+        self.height_label = QLabel(L.dialog.export_height)
         self.height_label.setAlignment(Qt.AlignmentFlag.AlignVCenter | Qt.AlignmentFlag.AlignRight)
 
         self.height_entry = QSpinBox()
@@ -431,19 +439,19 @@ class ExportFrame(QDialog):
         self.height_entry.setMaximum(7680)
         self.height_entry.setSingleStep(64)
         self.height_entry.setSuffix("px")
-        self.height_entry.setValue(self.height)
-        self.height_entry.valueChanged.connect(self.height_entry_changed)
+        self.height_entry.setValue(self.entry_height)
+        self.height_entry.valueChanged.connect(self.height_entry_changed) # pyright: ignore[reportUnknownMemberType]
 
-        self.aspect_label = QLabel("Aspect Ratio:")
+        self.aspect_label = QLabel(L.dialog.aspect_ratio)
         self.aspect_label.setAlignment(Qt.AlignmentFlag.AlignVCenter | Qt.AlignmentFlag.AlignRight)
 
-        self.aspect_entry = QCheckBox("Force")
+        self.aspect_entry = QCheckBox(L.dialog.force)
         self.aspect_entry.setChecked(self.keep_aspect)
-        self.aspect_entry.stateChanged.connect(self.aspect_entry_changed)
+        self.aspect_entry.stateChanged.connect(self.aspect_entry_changed) # pyright: ignore[reportUnknownMemberType]
 
-        self.confirm_buttons = QDialogButtonBox(QDialogButtonBox.Ok | QDialogButtonBox.Cancel)
-        self.confirm_buttons.accepted.connect(self.accept)
-        self.confirm_buttons.rejected.connect(self.reject)
+        self.confirm_buttons = QDialogButtonBox(QDialogButtonBox.StandardButton.Ok | QDialogButtonBox.StandardButton.Cancel)
+        self.confirm_buttons.accepted.connect(self.accept) # pyright: ignore[reportUnknownMemberType]
+        self.confirm_buttons.rejected.connect(self.reject) # pyright: ignore[reportUnknownMemberType]
 
         self.main_layout = QGridLayout()
 
@@ -459,24 +467,24 @@ class ExportFrame(QDialog):
 
         self.resize_window()
 
-    def resize_window(self):
+    def resize_window(self) -> None:
         self.setFixedSize(self.sizeHint())
 
-    def get_settings(self):
-        result = dict()
-        result["width"] = self.width
-        result["height"] = self.height
+    def get_settings(self) -> dict[str, int | bool]:
+        result: dict[str, int | bool] = dict()
+        result["width"] = self.entry_width
+        result["height"] = self.entry_height
         result["keep_aspect"] = self.keep_aspect
 
         return result
 
-    def width_entry_changed(self, value):
-        self.width = value
+    def width_entry_changed(self, value: int) -> None:
+        self.entry_width = value
 
-    def height_entry_changed(self, value):
-        self.height = value
+    def height_entry_changed(self, value: int) -> None:
+        self.entry_height = value
 
-    def aspect_entry_changed(self, value):
+    def aspect_entry_changed(self, value: int) -> None:
         if value == 0:
             self.keep_aspect = False
         else:
@@ -487,24 +495,24 @@ class ExportFrame(QDialog):
 #   User interface to export an image sequence
 class ExportSequence(QDialog):
     def __init__(self,
-                 width,
-                 height,
-                 parent=None
-                 ):
+                 width: int,
+                 height: int,
+                 parent: QWidget | None = None
+                 ) -> None:
         super().__init__(parent=parent)
-        self.setWindowTitle("Export Sequence Settings")
+        self.setWindowTitle(L.dialog.export_sequence)
         self.setWindowIcon(QIcon(constants.ICON_PATHS["program"]))
 
         # Hide "?" button
-        self.setWindowFlags(self.windowFlags() ^ Qt.WindowContextHelpButtonHint)
+        self.setWindowFlags(self.windowFlags() ^ Qt.WindowType.WindowContextHelpButtonHint)
 
-        self.width = width
-        self.height = height
+        self.entry_width = width
+        self.entry_height = height
         self.fps = 60.0
         self.keep_aspect = False
         self.format = constants.ImageFormatCode.PNG
 
-        self.fps_label = QLabel("FPS:")
+        self.fps_label = QLabel(L.dialog.fps)
         self.fps_label.setAlignment(Qt.AlignmentFlag.AlignVCenter | Qt.AlignmentFlag.AlignRight)
 
         self.fps_entry = QDoubleSpinBox()
@@ -513,9 +521,9 @@ class ExportSequence(QDialog):
         self.fps_entry.setSingleStep(1.0)
         self.fps_entry.setSuffix("fps")
         self.fps_entry.setValue(self.fps)
-        self.fps_entry.valueChanged.connect(self.fps_entry_changed)
+        self.fps_entry.valueChanged.connect(self.fps_entry_changed) # pyright: ignore[reportUnknownMemberType]
 
-        self.width_label = QLabel("Export Width:")
+        self.width_label = QLabel(L.dialog.export_width)
         self.width_label.setAlignment(Qt.AlignmentFlag.AlignVCenter | Qt.AlignmentFlag.AlignRight)
 
         self.width_entry = QSpinBox()
@@ -523,10 +531,10 @@ class ExportSequence(QDialog):
         self.width_entry.setMaximum(7680)
         self.width_entry.setSingleStep(64)
         self.width_entry.setSuffix("px")
-        self.width_entry.setValue(self.width)
-        self.width_entry.valueChanged.connect(self.width_entry_changed)
+        self.width_entry.setValue(self.entry_width)
+        self.width_entry.valueChanged.connect(self.width_entry_changed) # pyright: ignore[reportUnknownMemberType]
 
-        self.height_label = QLabel("Export Height:")
+        self.height_label = QLabel(L.dialog.export_height)
         self.height_label.setAlignment(Qt.AlignmentFlag.AlignVCenter | Qt.AlignmentFlag.AlignRight)
 
         self.height_entry = QSpinBox()
@@ -534,32 +542,32 @@ class ExportSequence(QDialog):
         self.height_entry.setMaximum(7680)
         self.height_entry.setSingleStep(64)
         self.height_entry.setSuffix("px")
-        self.height_entry.setValue(self.height)
-        self.height_entry.valueChanged.connect(self.height_entry_changed)
+        self.height_entry.setValue(self.entry_height)
+        self.height_entry.valueChanged.connect(self.height_entry_changed) # pyright: ignore[reportUnknownMemberType]
 
-        self.aspect_label = QLabel("Aspect Ratio:")
+        self.aspect_label = QLabel(L.dialog.aspect_ratio)
         self.aspect_label.setAlignment(Qt.AlignmentFlag.AlignVCenter | Qt.AlignmentFlag.AlignRight)
 
-        self.aspect_entry = QCheckBox("Force")
+        self.aspect_entry = QCheckBox(L.dialog.force)
         self.aspect_entry.setChecked(self.keep_aspect)
-        self.aspect_entry.stateChanged.connect(self.aspect_entry_changed)
+        self.aspect_entry.stateChanged.connect(self.aspect_entry_changed) # pyright: ignore[reportUnknownMemberType]
 
-        self.format_label = QLabel("Image Format:")
+        self.format_label = QLabel(L.dialog.image_format)
         self.format_label.setAlignment(Qt.AlignmentFlag.AlignVCenter | Qt.AlignmentFlag.AlignRight)
 
         self.format_entry = QComboBox()
-        self.format_entry.addItems(["PNG (.png)", "JPEG (.jpg)", "BMP (.bmp)"])
+        self.format_entry.addItems(["PNG (.png)", "JPEG (.jpg)", "BMP (.bmp)"]) # pyright: ignore[reportUnknownMemberType]
         if self.format == constants.ImageFormatCode.PNG:
             self.format_entry.setCurrentIndex(0)
         elif self.format == constants.ImageFormatCode.JPEG:
             self.format_entry.setCurrentIndex(1)
         elif self.format == constants.ImageFormatCode.BITMAP:
             self.format_entry.setCurrentIndex(2)
-        self.format_entry.currentIndexChanged.connect(self.format_entry_changed)
+        self.format_entry.currentIndexChanged.connect(self.format_entry_changed) # pyright: ignore[reportUnknownMemberType]
 
-        self.confirm_buttons = QDialogButtonBox(QDialogButtonBox.Ok | QDialogButtonBox.Cancel)
-        self.confirm_buttons.accepted.connect(self.accept)
-        self.confirm_buttons.rejected.connect(self.reject)
+        self.confirm_buttons = QDialogButtonBox(QDialogButtonBox.StandardButton.Ok | QDialogButtonBox.StandardButton.Cancel)
+        self.confirm_buttons.accepted.connect(self.accept) # pyright: ignore[reportUnknownMemberType]
+        self.confirm_buttons.rejected.connect(self.reject) # pyright: ignore[reportUnknownMemberType]
 
         self.main_layout = QGridLayout()
 
@@ -579,35 +587,35 @@ class ExportSequence(QDialog):
 
         self.resize_window()
 
-    def resize_window(self):
+    def resize_window(self) -> None:
         self.setFixedSize(self.sizeHint())
 
-    def get_settings(self):
-        result = dict()
-        result["width"] = self.width
-        result["height"] = self.height
+    def get_settings(self) -> dict[str, int | float | bool | ImageFormatCode]:
+        result: dict[str, int | float | bool | ImageFormatCode] = dict()
+        result["width"] = self.entry_width
+        result["height"] = self.entry_height
         result["fps"] = self.fps
         result["keep_aspect"] = self.keep_aspect
         result["format"] = self.format
 
         return result
 
-    def width_entry_changed(self, value):
-        self.width = value
+    def width_entry_changed(self, value: int) -> None:
+        self.entry_width = value
 
-    def height_entry_changed(self, value):
-        self.height = value
+    def height_entry_changed(self, value: int) -> None:
+        self.entry_height = value
 
-    def aspect_entry_changed(self, value):
+    def aspect_entry_changed(self, value: int) -> None:
         if value == 0:
             self.keep_aspect = False
         else:
             self.keep_aspect = True
 
-    def fps_entry_changed(self, value):
+    def fps_entry_changed(self, value: float) -> None:
         self.fps = value
 
-    def format_entry_changed(self, value):
+    def format_entry_changed(self, value: int) -> None:
         if value == 0:
             self.format = constants.ImageFormatCode.PNG
         elif value == 1:
@@ -620,23 +628,23 @@ class ExportSequence(QDialog):
 #   User interface to export a video
 class ExportVideo(QDialog):
     def __init__(self,
-                 width,
-                 height,
-                 parent=None
-                 ):
+                 width: int,
+                 height: int,
+                 parent: QWidget | None = None
+                 ) -> None:
         super().__init__(parent=parent)
-        self.setWindowTitle("Export Video Settings")
+        self.setWindowTitle(L.dialog.export_video)
         self.setWindowIcon(QIcon(constants.ICON_PATHS["program"]))
 
         # Hide "?" button
-        self.setWindowFlags(self.windowFlags() ^ Qt.WindowContextHelpButtonHint)
+        self.setWindowFlags(self.windowFlags() ^ Qt.WindowType.WindowContextHelpButtonHint)
 
-        self.width = width
-        self.height = height
+        self.entry_width = width
+        self.entry_height = height
         self.fps = 60.0
         self.keep_aspect = False
 
-        self.fps_label = QLabel("FPS:")
+        self.fps_label = QLabel(L.dialog.fps)
         self.fps_label.setAlignment(Qt.AlignmentFlag.AlignVCenter | Qt.AlignmentFlag.AlignRight)
 
         self.fps_entry = QDoubleSpinBox()
@@ -645,9 +653,9 @@ class ExportVideo(QDialog):
         self.fps_entry.setSingleStep(1.0)
         self.fps_entry.setSuffix("fps")
         self.fps_entry.setValue(self.fps)
-        self.fps_entry.valueChanged.connect(self.fps_entry_changed)
+        self.fps_entry.valueChanged.connect(self.fps_entry_changed) # pyright: ignore[reportUnknownMemberType]
 
-        self.width_label = QLabel("Export Width:")
+        self.width_label = QLabel(L.dialog.export_width)
         self.width_label.setAlignment(Qt.AlignmentFlag.AlignVCenter | Qt.AlignmentFlag.AlignRight)
 
         self.width_entry = QSpinBox()
@@ -655,10 +663,10 @@ class ExportVideo(QDialog):
         self.width_entry.setMaximum(7680)
         self.width_entry.setSingleStep(64)
         self.width_entry.setSuffix("px")
-        self.width_entry.setValue(self.width)
-        self.width_entry.valueChanged.connect(self.width_entry_changed)
+        self.width_entry.setValue(self.entry_width)
+        self.width_entry.valueChanged.connect(self.width_entry_changed) # pyright: ignore[reportUnknownMemberType]
 
-        self.height_label = QLabel("Export Height:")
+        self.height_label = QLabel(L.dialog.export_height)
         self.height_label.setAlignment(Qt.AlignmentFlag.AlignVCenter | Qt.AlignmentFlag.AlignRight)
 
         self.height_entry = QSpinBox()
@@ -666,19 +674,19 @@ class ExportVideo(QDialog):
         self.height_entry.setMaximum(7680)
         self.height_entry.setSingleStep(64)
         self.height_entry.setSuffix("px")
-        self.height_entry.setValue(self.height)
-        self.height_entry.valueChanged.connect(self.height_entry_changed)
+        self.height_entry.setValue(self.entry_height)
+        self.height_entry.valueChanged.connect(self.height_entry_changed) # pyright: ignore[reportUnknownMemberType]
 
-        self.aspect_label = QLabel("Aspect Ratio:")
+        self.aspect_label = QLabel(L.dialog.aspect_ratio)
         self.aspect_label.setAlignment(Qt.AlignmentFlag.AlignVCenter | Qt.AlignmentFlag.AlignRight)
 
-        self.aspect_entry = QCheckBox("Force")
+        self.aspect_entry = QCheckBox(L.dialog.force)
         self.aspect_entry.setChecked(self.keep_aspect)
-        self.aspect_entry.stateChanged.connect(self.aspect_entry_changed)
+        self.aspect_entry.stateChanged.connect(self.aspect_entry_changed) # pyright: ignore[reportUnknownMemberType]
 
-        self.confirm_buttons = QDialogButtonBox(QDialogButtonBox.Ok | QDialogButtonBox.Cancel)
-        self.confirm_buttons.accepted.connect(self.accept)
-        self.confirm_buttons.rejected.connect(self.reject)
+        self.confirm_buttons = QDialogButtonBox(QDialogButtonBox.StandardButton.Ok | QDialogButtonBox.StandardButton.Cancel)
+        self.confirm_buttons.accepted.connect(self.accept) # pyright: ignore[reportUnknownMemberType]
+        self.confirm_buttons.rejected.connect(self.reject) # pyright: ignore[reportUnknownMemberType]
 
         self.main_layout = QGridLayout()
 
@@ -696,31 +704,31 @@ class ExportVideo(QDialog):
 
         self.resize_window()
 
-    def resize_window(self):
+    def resize_window(self) -> None:
         self.setFixedSize(self.sizeHint())
 
-    def get_settings(self):
-        result = dict()
-        result["width"] = self.width
-        result["height"] = self.height
+    def get_settings(self) -> dict[str, int | float | bool]:
+        result: dict[str, int | float | bool] = dict()
+        result["width"] = self.entry_width
+        result["height"] = self.entry_height
         result["fps"] = self.fps
         result["keep_aspect"] = self.keep_aspect
 
         return result
 
-    def width_entry_changed(self, value):
-        self.width = value
+    def width_entry_changed(self, value: int) -> None:
+        self.entry_width = value
 
-    def height_entry_changed(self, value):
-        self.height = value
+    def height_entry_changed(self, value: int) -> None:
+        self.entry_height = value
 
-    def aspect_entry_changed(self, value):
+    def aspect_entry_changed(self, value: int) -> None:
         if value == 0:
             self.keep_aspect = False
         else:
             self.keep_aspect = True
 
-    def fps_entry_changed(self, value):
+    def fps_entry_changed(self, value: float) -> None:
         self.fps = value
 
 
@@ -728,14 +736,14 @@ class ExportVideo(QDialog):
 #   User interface to set encoder settings when exporting a video
 class VideoEncoderSettings(QDialog):
     def __init__(self,
-                 video_format,
-                 parent=None):
+                 video_format: constants.VideoFormatCode,
+                 parent: QWidget | None = None) -> None:
         super().__init__(parent=parent)
-        self.setWindowTitle("Video Encoder Settings")
+        self.setWindowTitle(L.dialog.encoder_settings)
         self.setWindowIcon(QIcon(constants.ICON_PATHS["program"]))
 
         # Hide "?" button
-        self.setWindowFlags(self.windowFlags() ^ Qt.WindowContextHelpButtonHint)
+        self.setWindowFlags(self.windowFlags() ^ Qt.WindowType.WindowContextHelpButtonHint)
 
         self.video_format = video_format
 
@@ -747,29 +755,29 @@ class VideoEncoderSettings(QDialog):
         self.audio_codec = constants.AudioCodecCode.MP3
         self.preset = constants.EncoderPresetCode.ULTRAFAST
 
-        self.codec_entry_label = QLabel("Video Codec:")
+        self.codec_entry_label = QLabel(L.dialog.video_codec)
         self.codec_entry_label.setAlignment(Qt.AlignmentFlag.AlignVCenter | Qt.AlignmentFlag.AlignRight)
 
         self.codec_entry = QComboBox()
         if self.video_format == constants.VideoFormatCode.MP4:
-            self.codec_entry.addItems(["LIBX264", "MPEG4"])
+            self.codec_entry.addItems(["LIBX264", "MPEG4"]) # pyright: ignore[reportUnknownMemberType]
             if self.codec == constants.VideoCodecCode.LIBX264:
                 self.codec_entry.setCurrentIndex(0)
             elif self.codec == constants.VideoCodecCode.MPEG4:
                 self.codec_entry.setCurrentIndex(1)
         elif self.video_format == constants.VideoFormatCode.AVI:
-            self.codec_entry.addItems(["PNG", "Raw"])
+            self.codec_entry.addItems(["PNG", "Raw"]) # pyright: ignore[reportUnknownMemberType]
             if self.codec == constants.VideoCodecCode.PNG:
                 self.codec_entry.setCurrentIndex(0)
             elif self.codec == constants.VideoCodecCode.RAW:
                 self.codec_entry.setCurrentIndex(1)
-        self.codec_entry.currentIndexChanged.connect(self.codec_entry_changed)
+        self.codec_entry.currentIndexChanged.connect(self.codec_entry_changed) # pyright: ignore[reportUnknownMemberType]
 
-        self.audio_codec_entry_label = QLabel("Audio Codec:")
+        self.audio_codec_entry_label = QLabel(L.dialog.audio_codec)
         self.audio_codec_entry_label.setAlignment(Qt.AlignmentFlag.AlignVCenter | Qt.AlignmentFlag.AlignRight)
 
         self.audio_codec_entry = QComboBox()
-        self.audio_codec_entry.addItems(["MP3", "M4A", "WAV 16-bit", "WAV 32-bit"])
+        self.audio_codec_entry.addItems(["MP3", "M4A", "WAV 16-bit", "WAV 32-bit"]) # pyright: ignore[reportUnknownMemberType]
         if self.audio_codec == constants.AudioCodecCode.MP3:
             self.audio_codec_entry.setCurrentIndex(0)
         elif self.audio_codec == constants.AudioCodecCode.M4A:
@@ -778,13 +786,13 @@ class VideoEncoderSettings(QDialog):
             self.audio_codec_entry.setCurrentIndex(2)
         elif self.audio_codec == constants.AudioCodecCode.WAV32:
             self.audio_codec_entry.setCurrentIndex(3)
-        self.audio_codec_entry.currentIndexChanged.connect(self.audio_codec_entry_changed)
+        self.audio_codec_entry.currentIndexChanged.connect(self.audio_codec_entry_changed) # pyright: ignore[reportUnknownMemberType]
 
-        self.preset_entry_label = QLabel("Encoder Preset:")
+        self.preset_entry_label = QLabel(L.dialog.encoder_preset)
         self.preset_entry_label.setAlignment(Qt.AlignmentFlag.AlignVCenter | Qt.AlignmentFlag.AlignRight)
 
         self.preset_entry = QComboBox()
-        self.preset_entry.addItems([
+        self.preset_entry.addItems([ # pyright: ignore[reportUnknownMemberType]
             "Ultra Fast",
             "Super Fast",
             "Very Fast",
@@ -816,11 +824,11 @@ class VideoEncoderSettings(QDialog):
             self.preset_entry.setCurrentIndex(8)
         elif self.preset == constants.EncoderPresetCode.PLACEBO:
             self.preset_entry.setCurrentIndex(9)
-        self.preset_entry.currentIndexChanged.connect(self.preset_entry_changed)
+        self.preset_entry.currentIndexChanged.connect(self.preset_entry_changed) # pyright: ignore[reportUnknownMemberType]
 
-        self.confirm_buttons = QDialogButtonBox(QDialogButtonBox.Ok | QDialogButtonBox.Cancel)
-        self.confirm_buttons.accepted.connect(self.accept)
-        self.confirm_buttons.rejected.connect(self.reject)
+        self.confirm_buttons = QDialogButtonBox(QDialogButtonBox.StandardButton.Ok | QDialogButtonBox.StandardButton.Cancel)
+        self.confirm_buttons.accepted.connect(self.accept) # pyright: ignore[reportUnknownMemberType]
+        self.confirm_buttons.rejected.connect(self.reject) # pyright: ignore[reportUnknownMemberType]
 
         self.main_layout = QGridLayout()
 
@@ -836,18 +844,18 @@ class VideoEncoderSettings(QDialog):
 
         self.resize_window()
 
-    def resize_window(self):
+    def resize_window(self) -> None:
         self.setFixedSize(self.sizeHint())
 
-    def get_settings(self):
-        result = dict()
+    def get_settings(self) -> dict[str, VideoCodecCode | AudioCodecCode | EncoderPresetCode]:
+        result: dict[str, VideoCodecCode | AudioCodecCode | EncoderPresetCode] = dict()
         result["codec"] = self.codec
         result["audio_codec"] = self.audio_codec
         result["preset"] = self.preset
 
         return result
 
-    def codec_entry_changed(self, value):
+    def codec_entry_changed(self, value: int) -> None:
         if self.video_format == constants.VideoFormatCode.MP4:
             if value == 0:
                 self.codec = constants.VideoCodecCode.LIBX264
@@ -859,7 +867,7 @@ class VideoEncoderSettings(QDialog):
             elif value == 1:
                 self.codec = constants.VideoCodecCode.RAW
 
-    def audio_codec_entry_changed(self, value):
+    def audio_codec_entry_changed(self, value: int) -> None:
         if value == 0:
             self.audio_codec = constants.AudioCodecCode.MP3
         elif value == 1:
@@ -869,7 +877,7 @@ class VideoEncoderSettings(QDialog):
         elif value == 3:
             self.audio_codec = constants.AudioCodecCode.WAV32
 
-    def preset_entry_changed(self, value):
+    def preset_entry_changed(self, value: int) -> None:
         if value == 0:
             self.preset = constants.EncoderPresetCode.ULTRAFAST
         elif value == 1:
@@ -895,70 +903,71 @@ class VideoEncoderSettings(QDialog):
 # Hotkey info dialog
 #   Lists the program hotkeys
 class HotkeysInfo(QDialog):
-    def __init__(self, parent=None):
+    def __init__(self, parent: QWidget | None = None) -> None:
         super().__init__(parent=parent)
-        self.setWindowTitle("Hotkey Info")
+        
+        self.setWindowTitle(L.dialog.hotkey_info)
         self.setWindowIcon(QIcon(constants.ICON_PATHS["program"]))
 
         # Hide "?" button
-        self.setWindowFlags(self.windowFlags() ^ Qt.WindowContextHelpButtonHint)
+        self.setWindowFlags(self.windowFlags() ^ Qt.WindowType.WindowContextHelpButtonHint)
 
-        self.play_label = QLabel("Play / Pause:")
+        self.play_label = QLabel(L.hotkeys.play_pause)
         self.play_label.setAlignment(Qt.AlignmentFlag.AlignVCenter | Qt.AlignmentFlag.AlignRight)
 
-        self.play_key_label = QLabel("Spacebar")
+        self.play_key_label = QLabel(L.hotkeys.key_spacebar)
         self.play_key_label.setAlignment(Qt.AlignmentFlag.AlignVCenter | Qt.AlignmentFlag.AlignLeft)
 
-        self.forward_label = QLabel("Forward:")
+        self.forward_label = QLabel(L.hotkeys.forward)
         self.forward_label.setAlignment(Qt.AlignmentFlag.AlignVCenter | Qt.AlignmentFlag.AlignRight)
 
-        self.forward_key_label = QLabel("Right")
+        self.forward_key_label = QLabel(L.hotkeys.key_right)
         self.forward_key_label.setAlignment(Qt.AlignmentFlag.AlignVCenter | Qt.AlignmentFlag.AlignLeft)
 
-        self.back_label = QLabel("Back:")
+        self.back_label = QLabel(L.hotkeys.back)
         self.back_label.setAlignment(Qt.AlignmentFlag.AlignVCenter | Qt.AlignmentFlag.AlignRight)
 
-        self.back_key_label = QLabel("Left")
+        self.back_key_label = QLabel(L.hotkeys.key_left)
         self.back_key_label.setAlignment(Qt.AlignmentFlag.AlignVCenter | Qt.AlignmentFlag.AlignLeft)
 
-        self.frame_forward_label = QLabel("Frame Forward:")
+        self.frame_forward_label = QLabel(L.hotkeys.frame_forward)
         self.frame_forward_label.setAlignment(Qt.AlignmentFlag.AlignVCenter | Qt.AlignmentFlag.AlignRight)
 
         self.frame_forward_key_label = QLabel(">")
         self.frame_forward_key_label.setAlignment(Qt.AlignmentFlag.AlignVCenter | Qt.AlignmentFlag.AlignLeft)
 
-        self.frame_back_label = QLabel("Frame Back:")
+        self.frame_back_label = QLabel(L.hotkeys.frame_back)
         self.frame_back_label.setAlignment(Qt.AlignmentFlag.AlignVCenter | Qt.AlignmentFlag.AlignRight)
 
         self.frame_back_key_label = QLabel("<")
         self.frame_back_key_label.setAlignment(Qt.AlignmentFlag.AlignVCenter | Qt.AlignmentFlag.AlignLeft)
 
-        self.restart_label = QLabel("Restart:")
+        self.restart_label = QLabel(L.hotkeys.restart)
         self.restart_label.setAlignment(Qt.AlignmentFlag.AlignVCenter | Qt.AlignmentFlag.AlignRight)
 
         self.restart_key_label = QLabel("R")
         self.restart_key_label.setAlignment(Qt.AlignmentFlag.AlignVCenter | Qt.AlignmentFlag.AlignLeft)
 
-        self.volume_up_label = QLabel("Volume Up:")
+        self.volume_up_label = QLabel(L.hotkeys.volume_up)
         self.volume_up_label.setAlignment(Qt.AlignmentFlag.AlignVCenter | Qt.AlignmentFlag.AlignRight)
 
-        self.volume_up_key_label = QLabel("Up")
+        self.volume_up_key_label = QLabel(L.hotkeys.key_up)
         self.volume_up_key_label.setAlignment(Qt.AlignmentFlag.AlignVCenter | Qt.AlignmentFlag.AlignLeft)
 
-        self.volume_down_label = QLabel("Volume Down:")
+        self.volume_down_label = QLabel(L.hotkeys.volume_down)
         self.volume_down_label.setAlignment(Qt.AlignmentFlag.AlignVCenter | Qt.AlignmentFlag.AlignRight)
 
-        self.volume_down_key_label = QLabel("Down")
+        self.volume_down_key_label = QLabel(L.hotkeys.key_down)
         self.volume_down_key_label.setAlignment(Qt.AlignmentFlag.AlignVCenter | Qt.AlignmentFlag.AlignLeft)
 
-        self.mute_label = QLabel("Mute:")
+        self.mute_label = QLabel(L.hotkeys.mute)
         self.mute_label.setAlignment(Qt.AlignmentFlag.AlignVCenter | Qt.AlignmentFlag.AlignRight)
 
         self.mute_key_label = QLabel("M")
         self.mute_key_label.setAlignment(Qt.AlignmentFlag.AlignVCenter | Qt.AlignmentFlag.AlignLeft)
 
-        self.confirm_buttons = QDialogButtonBox(QDialogButtonBox.Ok)
-        self.confirm_buttons.accepted.connect(self.accept)
+        self.confirm_buttons = QDialogButtonBox(QDialogButtonBox.StandardButton.Ok)
+        self.confirm_buttons.accepted.connect(self.accept) # pyright: ignore[reportUnknownMemberType]
 
         self.main_layout = QGridLayout()
 
@@ -986,20 +995,21 @@ class HotkeysInfo(QDialog):
 
         self.resize_window()
 
-    def resize_window(self):
+    def resize_window(self) -> None:
         self.setFixedSize(self.sizeHint())
 
 
 # About dialog
 #   Gives info about the program
 class About(QDialog):
-    def __init__(self, parent=None):
+    def __init__(self, parent: QWidget | None = None) -> None:
         super().__init__(parent=parent)
-        self.setWindowTitle(f"About {constants.TITLE}")
+        
+        self.setWindowTitle(f"{L.menu_help.about} {constants.TITLE}")
         self.setWindowIcon(QIcon(constants.ICON_PATHS["program"]))
 
         # Hide "?" button
-        self.setWindowFlags(self.windowFlags() ^ Qt.WindowContextHelpButtonHint)
+        self.setWindowFlags(self.windowFlags() ^ Qt.WindowType.WindowContextHelpButtonHint)
 
         self.icon_size = 200
 
@@ -1010,14 +1020,15 @@ class About(QDialog):
         self.icon_label.setFixedSize(self.icon_size, self.icon_size)
 
         self.about_text = QLabel(
-            f"{constants.TITLE} v{constants.VERSION}\nby {constants.COPYRIGHT}\n© Copyright 2023\n\n"
+            f"{constants.TITLE} v{constants.VERSION}\n{constants.COPYRIGHT}\n© Copyright 2026\n\n"
             f"{constants.DESCRIPTION}\n\n"
-            f"Project Home Page:\n{constants.PROJECT_URL}\n\n"
-            f"Donate:\n{constants.DONATE_URL}")
+            f"{L.about.o_project_home}\n{constants.O_PROJECT_URL}\n\n"
+            f"{L.about.m_project_home}\n{constants.M_PROJECT_URL}\n\n"
+            f"{L.about.o_donate}\n{constants.O_DONATE_URL}")
         self.about_text.setAlignment(Qt.AlignmentFlag.AlignCenter)
 
-        self.confirm_buttons = QDialogButtonBox(QDialogButtonBox.Ok)
-        self.confirm_buttons.accepted.connect(self.accept)
+        self.confirm_buttons = QDialogButtonBox(QDialogButtonBox.StandardButton.Ok)
+        self.confirm_buttons.accepted.connect(self.accept) # pyright: ignore[reportUnknownMemberType]
 
         self.main_layout = QGridLayout()
 
@@ -1029,5 +1040,5 @@ class About(QDialog):
 
         self.resize_window()
 
-    def resize_window(self):
+    def resize_window(self) -> None:
         self.setFixedSize(self.sizeHint())

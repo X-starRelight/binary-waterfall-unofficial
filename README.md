@@ -15,6 +15,11 @@ Made with the help of Binary Waterfall:
 https://github.com/nimaid/binary-waterfall
 ```
 
+```
+Modified version maintained by XstarRelight (xr):
+https://github.com/X-starRelight/binary-waterfall-unofficial
+```
+
 ## Keyboard Shortcuts
 - **Play / Pause:** `Spacebar`
 - **Back:** `Left Arrow`

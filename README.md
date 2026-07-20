@@ -1,4 +1,4 @@
-# <img src="src/binary_waterfall/resources/icon.png" height="20px" alt="Binary Waterfall"/> Binary Waterfall
+# <img src="src/binary_waterfall_unofficial/resources/icon.png" height="20px" alt="Binary Waterfall"/> Binary Waterfall
 ### A Raw Data Media Player (Unofficial Enhanced Fork)
 
 <p align="center"><img src="docs/example.png" width="400px" alt="Running the program on mspaint.exe"/></p>

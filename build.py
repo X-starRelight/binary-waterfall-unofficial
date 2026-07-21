@@ -33,7 +33,7 @@ def main():
         '--standalone',
         '--enable-plugin=pyqt6',
         '--follow-imports',
-        '--output-dir=dist',
+        '--output-dir=build',
     ]
 
     # ---------- Qt6 多媒体插件 DLL ----------

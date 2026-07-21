@@ -2,7 +2,7 @@
 name = "binary-waterfall-unofficial"
 version = "3.7.0"
 readme = "README.md"
-description = "A Raw Data Media Player (Unofficial Enhanced Fork)"
+description = "A Raw Data Media Player (Unofficial Enhanced Version)"
 license= {file = "LICENSE"}
 authors = [
     {name = "Ella Jameson", email = "ellagjameson@gmail.com"},
@@ -36,11 +36,7 @@ homepage = "https://github.com/X-starRelight/binary-waterfall-unofficial"
 repository = "https://github.com/X-starRelight/binary-waterfall-unofficial"
 Issues = "https://github.com/X-starRelight/binary-waterfall-unofficial/issues"
 
-[project.scripts]
-binary-waterfall-unofficial = "binary_waterfall_unofficial:run"
-
 [dependency-groups]
 build = [
     "nuitka>=4.1.3",
-    "pyyaml>=6.0.3",
 ]

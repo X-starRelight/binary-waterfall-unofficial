@@ -35,11 +35,15 @@ class AudioFormatCode(Enum):
     WAVE = ".wav"
     MP3 = ".mp3"
     FLAC = ".flac"
+    OGG = ".ogg"
+    M4A = ".m4a"
 
 
 class VideoFormatCode(Enum):
     MP4 = ".mp4"
     AVI = ".avi"
+    MKV = ".mkv"
+    MOV = ".mov"
 
 
 class VideoCodecCode(Enum):
@@ -47,13 +51,22 @@ class VideoCodecCode(Enum):
     MPEG4 = "mpeg4"
     RAW = "rawvideo"
     PNG = "png"
+    LIBX265 = "libx265"
+    PRORES = "prores_ks"
 
 
 class AudioCodecCode(Enum):
     MP3 = "libmp3lame"
-    M4A = "libfdk_aac"
+    M4A = "aac"
     WAV16 = "pcm_s16le"
     WAV32 = "pcm_s32le"
+    FLAC = "flac"
+    VORBIS = "libvorbis"
+
+
+class EndiannessCode(Enum):
+    LITTLE = "little"
+    BIG = "big"
 
 
 class EncoderPresetCode(Enum):

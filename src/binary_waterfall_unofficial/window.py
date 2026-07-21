@@ -1,5 +1,7 @@
 import os
-from PyQt6.QtCore import Qt, QTimer, QProcess, QCoreApplication
+import json
+from typing import Any
+from PyQt6.QtCore import Qt, QTimer, QCoreApplication
 from PyQt6.QtWidgets import (
     QMainWindow, QMenuBar, QMenu, QWidget, QGridLayout, QHBoxLayout, QLabel,
     QFileDialog, QMessageBox, QSlider, QProgressDialog
@@ -27,6 +29,7 @@ class MyQMainWindow(QMainWindow):
         super().__init__()
         self.file_savename: str = ""
         self.muted: bool = False
+        self.needs_restart: bool = False
 
         
         self.setWindowTitle(L.menu.title)
@@ -230,22 +233,22 @@ class MyQMainWindow(QMainWindow):
         self.export_menu.setEnabled(False) # pyright: ignore[reportUnknownMemberType]
 
         self.export_menu_audio = QAction(L.menu_export.audio, self)
-        self.export_menu_audio.triggered.connect(lambda : show_cannotuse_feat(self)) # pyright: ignore[reportUnknownMemberType]
+        # self.export_menu_audio.triggered.connect(lambda : show_cannotuse_feat(self)) # pyright: ignore[reportUnknownMemberType]
         self.export_menu_audio.triggered.connect(self.export_audio_clicked) # pyright: ignore[reportUnknownMemberType]
         self.export_menu.addAction(self.export_menu_audio) # pyright: ignore[reportUnknownMemberType]
 
         self.export_menu_image = QAction(L.menu_export.image, self)
-        self.export_menu_image.triggered.connect(lambda : show_cannotuse_feat(self)) # pyright: ignore[reportUnknownMemberType]
+        # self.export_menu_image.triggered.connect(lambda : show_cannotuse_feat(self)) # pyright: ignore[reportUnknownMemberType]
         self.export_menu_image.triggered.connect(self.export_image_clicked) # pyright: ignore[reportUnknownMemberType]
         self.export_menu.addAction(self.export_menu_image) # pyright: ignore[reportUnknownMemberType]
 
         self.export_menu_sequence = QAction(L.menu_export.image_sequence, self)
-        self.export_menu_sequence.triggered.connect(lambda : show_cannotuse_feat(self)) # pyright: ignore[reportUnknownMemberType]
+        # self.export_menu_sequence.triggered.connect(lambda : show_cannotuse_feat(self)) # pyright: ignore[reportUnknownMemberType]
         self.export_menu_sequence.triggered.connect(self.export_sequence_clicked) # pyright: ignore[reportUnknownMemberType]
         self.export_menu.addAction(self.export_menu_sequence) # pyright: ignore[reportUnknownMemberType]
 
         self.export_menu_video = QAction(L.menu_export.video, self)
-        self.export_menu_video.triggered.connect(lambda : show_cannotuse_feat(self)) # pyright: ignore[reportUnknownMemberType]
+        # self.export_menu_video.triggered.connect(lambda : show_cannotuse_feat(self)) # pyright: ignore[reportUnknownMemberType]
         self.export_menu_video.triggered.connect(self.export_video_clicked) # pyright: ignore[reportUnknownMemberType]
         self.export_menu.addAction(self.export_menu_video) # pyright: ignore[reportUnknownMemberType]
 
@@ -261,6 +264,9 @@ class MyQMainWindow(QMainWindow):
 
         self.set_volume(self.current_volume)
 
+        # Load saved settings
+        self._load_app_settings()
+
         # Set window to content size
         self.resize_window()
 
@@ -269,12 +275,171 @@ class MyQMainWindow(QMainWindow):
         self.language_menu.clear()
         available = get_manager().available_languages()
         current = get_manager().current_code
+        custom_codes = get_manager().custom_codes
+
         for code, name in sorted(available.items()):
-            action = QAction(f"{name} ({code})", self)
+            display_name = f"{name} ({code})"
+            if code in custom_codes:
+                display_name += L.dialog.is_custom
+            action = QAction(display_name, self)
             action.setCheckable(True)
             action.setChecked(code == current)
             action.triggered.connect(lambda checked, c=code: self._switch_language(c)) # pyright: ignore[reportUnknownLambdaType, reportUnknownMemberType]
             self.language_menu.addAction(action) # pyright: ignore[reportUnknownMemberType]
+
+        self.language_menu.addSeparator() # pyright: ignore[reportUnknownMemberType]
+
+        import_action = QAction(L.dialog.import_language, self)
+        import_action.triggered.connect(self._import_language) # pyright: ignore[reportUnknownMemberType]
+        self.language_menu.addAction(import_action) # pyright: ignore[reportUnknownMemberType]
+
+        if custom_codes:
+            remove_action = QAction(L.dialog.remove_language, self)
+            remove_action.triggered.connect(self._remove_language) # pyright: ignore[reportUnknownMemberType]
+            self.language_menu.addAction(remove_action) # pyright: ignore[reportUnknownMemberType]
+
+        self.language_menu.addSeparator() # pyright: ignore[reportUnknownMemberType]
+
+        fallback_action = QAction(L.dialog.fallback_language, self)
+        fallback_action.triggered.connect(self._set_fallback_language) # pyright: ignore[reportUnknownMemberType]
+        self.language_menu.addAction(fallback_action) # pyright: ignore[reportUnknownMemberType]
+
+    def _import_language(self) -> None:
+        """导入自定义语言文件"""
+        filename, _filetype = QFileDialog.getOpenFileName(
+            self,
+            L.dialog.import_language_title,
+            "",
+            L.dialog.import_language_filter
+        )
+
+        if filename == "":
+            return
+
+        try:
+            with open(filename, encoding="utf-8") as f:
+                data = json.load(f)
+
+            # Validate it's a dict
+            if not isinstance(data, dict):
+                raise ValueError("File must contain a JSON object")
+
+            # Validate it has _meta with name
+            if "_meta" not in data or "name" not in data["_meta"]:
+                raise ValueError("File must have '_meta.name' field")
+
+            code: str = get_manager().import_language(filename) # pyright: ignore[reportUnusedVariable]
+            name: str = data["_meta"]["name"] # pyright: ignore[reportUnknownVariableType]
+
+            QMessageBox.information(
+                self,
+                L.dialog.import_language_title,
+                L.dialog.import_language_success.format(code=name), # pyright: ignore[reportUnknownArgumentType]
+                QMessageBox.StandardButton.Ok
+            )
+
+            self._rebuild_menus()
+            self._show_restart_prompt()
+
+        except json.JSONDecodeError as e:
+            QMessageBox.critical(
+                self,
+                L.dialog.error,
+                L.dialog.import_language_invalid.format(error=str(e)),
+                QMessageBox.StandardButton.Ok
+            )
+        except Exception as e:
+            QMessageBox.critical(
+                self,
+                L.dialog.error,
+                L.dialog.import_language_error.format(error=str(e)),
+                QMessageBox.StandardButton.Ok
+            )
+
+    def _remove_language(self) -> None:
+        """移除自定义语言"""
+        custom_codes = get_manager().custom_codes
+        if not custom_codes:
+            return
+
+        # Build list of custom languages with display names
+        items: list[tuple[str, str]] = []
+        for code in sorted(custom_codes):
+            name = get_manager().available_languages().get(code, code)
+            items.append((code, name))
+
+        # Show selection dialog
+        from PyQt6.QtWidgets import QInputDialog
+        names = [f"{name} ({code})" for code, name in items]
+        selected, ok = QInputDialog.getItem( # pyright: ignore[reportUnknownMemberType]
+            self,
+            L.dialog.remove_language,
+            L.dialog.remove_language,
+            names,
+            0,
+            False
+        )
+
+        if not ok:
+            return
+
+        # Find the code
+        idx = names.index(selected)
+        code, name = items[idx]
+
+        # Confirm
+        result = QMessageBox.question(
+            self,
+            L.dialog.remove_language,
+            L.dialog.remove_language_confirm.format(name=name),
+            QMessageBox.StandardButton.Yes | QMessageBox.StandardButton.No
+        )
+
+        if result == QMessageBox.StandardButton.Yes:
+            get_manager().remove_language(code)
+            self._rebuild_menus()
+            self._show_restart_prompt()
+
+    def _set_fallback_language(self) -> None:
+        """设置回退语言"""
+        from PyQt6.QtWidgets import QInputDialog
+
+        available = get_manager().available_languages()
+        builtin = get_manager().builtin_codes
+        current_fallback = get_manager().fallback_code
+
+        # Build list of available fallback languages (only built-in)
+        items: list[tuple[str, str]] = []
+        for code in sorted(builtin):
+            name = available.get(code, code)
+            items.append((code, name))
+
+        names = [f"{name} ({code})" for code, name in items]
+        current_idx = 0
+        for i, (code, _) in enumerate(items):
+            if code == current_fallback:
+                current_idx = i
+                break
+
+        selected, ok = QInputDialog.getItem( # pyright: ignore[reportUnknownMemberType]
+            self,
+            L.dialog.fallback_language_title,
+            L.dialog.fallback_language_desc,
+            names,
+            current_idx,
+            False
+        )
+
+        if not ok:
+            return
+
+        # Find the code
+        idx = names.index(selected)
+        code, name = items[idx]
+
+        get_manager().set_fallback(code)
+        self._rebuild_menus()
+        self._show_restart_prompt()
 
     def _switch_language(self, code: str) -> None:
         """切换语言"""
@@ -326,12 +491,99 @@ class MyQMainWindow(QMainWindow):
             self._restart_application()
 
     def _restart_application(self) -> None:
-        """重启应用"""
-        import sys
-        executable = sys.executable
-        args = sys.argv[1:]
-        QProcess.startDetached(executable, args) # pyright: ignore[reportUnknownMemberType]
+        """重启应用（由 core.py 的主循环处理）"""
+        self.needs_restart = True
         QCoreApplication.quit()
+
+    def _load_app_settings(self) -> None:
+        """Load saved application settings"""
+        settings = get_manager().load_app_settings()
+        if not settings:
+            return
+
+        # Apply audio settings
+        if "num_channels" in settings:
+            self.bw.num_channels = settings["num_channels"]
+        if "sample_bytes" in settings:
+            self.bw.sample_bytes = settings["sample_bytes"]
+        if "sample_rate" in settings:
+            self.bw.sample_rate = settings["sample_rate"]
+        if "file_volume" in settings:
+            self.bw.volume = settings["file_volume"]
+        if "endianness" in settings:
+            from .constants.enums import EndiannessCode
+            self.bw.endianness = EndiannessCode(settings["endianness"])
+
+        # Apply video settings
+        if "width" in settings and "height" in settings:
+            self.bw.set_dims(width=settings["width"], height=settings["height"])
+        if "color_format_string" in settings:
+            self.bw.set_color_format(settings["color_format_string"])
+        if "flip_v" in settings or "flip_h" in settings:
+            self.bw.set_flip(
+                flip_v=settings.get("flip_v", constants.DEFAULTS["flip_v"]),
+                flip_h=settings.get("flip_h", constants.DEFAULTS["flip_h"])
+            )
+        if "alignment" in settings:
+            from .constants.enums import AlignmentCode
+            self.bw.set_alignment(alignment=AlignmentCode(settings["alignment"]))
+        if "playhead_visible" in settings:
+            self.bw.set_playhead_visible(playhead_visible=settings["playhead_visible"])
+
+        # Apply player settings
+        if "max_dim" in settings:
+            self.player.update_dims(max_dim=settings["max_dim"])
+        if "player_fps" in settings:
+            self.player.set_fps(fps=settings["player_fps"])
+
+        # Apply volume
+        if "file_volume" in settings:
+            self.current_volume = settings["file_volume"]
+            self.set_volume(settings["file_volume"])
+
+        # Re-compute audio with loaded settings
+        if self.bw.filename is not None:
+            self.bw.compute_audio()
+            self.player.set_audio_file(self.bw.audio_filename)
+            self.player.update_image()
+
+    def _save_app_settings(self) -> None:
+        """Save current application settings"""
+        settings: dict[str, Any] = {}
+
+        # Audio settings
+        if self.bw.num_channels is not None:
+            settings["num_channels"] = self.bw.num_channels
+        if self.bw.sample_bytes is not None:
+            settings["sample_bytes"] = self.bw.sample_bytes
+        if self.bw.sample_rate is not None:
+            settings["sample_rate"] = self.bw.sample_rate
+        if self.bw.volume is not None:
+            settings["file_volume"] = self.bw.volume
+        if self.bw.endianness is not None:
+            settings["endianness"] = self.bw.endianness.value
+
+        # Video settings
+        if self.bw.width is not None:
+            settings["width"] = self.bw.width
+        if self.bw.height is not None:
+            settings["height"] = self.bw.height
+        if self.bw.get_color_format_string():
+            settings["color_format_string"] = self.bw.get_color_format_string()
+        if self.bw.flip_v is not None:
+            settings["flip_v"] = self.bw.flip_v
+        if self.bw.flip_h is not None:
+            settings["flip_h"] = self.bw.flip_h
+        if self.bw.alignment is not None:
+            settings["alignment"] = self.bw.alignment.value
+        if self.bw.playhead_visible is not None:
+            settings["playhead_visible"] = self.bw.playhead_visible
+
+        # Player settings
+        settings["max_dim"] = self.player.max_dim
+        settings["player_fps"] = self.player.fps
+
+        get_manager().save_app_settings(settings)
 
     def keyPressEvent(self, a0: QKeyEvent) -> None: # pyright: ignore[reportIncompatibleMethodOverride]
         key = a0.key()
@@ -486,7 +738,8 @@ class MyQMainWindow(QMainWindow):
         )
 
         if filename != "":
-            if os.path.getsize(filename) == 0:
+            file_size = os.path.getsize(filename)
+            if file_size == 0:
                 QMessageBox.critical(
                     self,
                     L.dialog.error,
@@ -494,6 +747,13 @@ class MyQMainWindow(QMainWindow):
                     QMessageBox.StandardButton.Ok
                 )
                 return
+            elif file_size < 1024:
+                QMessageBox.warning(
+                    self,
+                    L.dialog.warning,
+                    L.dialog.file_is_small.format(filename=filename, size=file_size),
+                    QMessageBox.StandardButton.Ok
+                )
 
             self.player.open_file(filename=filename)
 
@@ -506,7 +766,7 @@ class MyQMainWindow(QMainWindow):
 
             self.update_seekbar()
 
-            # self.export_menu.setEnabled(True)
+            self.export_menu.setEnabled(True)
             self.file_menu_close.setEnabled(True)
 
     def close_file_clicked(self) -> None:
@@ -527,11 +787,13 @@ class MyQMainWindow(QMainWindow):
         assert self.bw.num_channels is not None
         assert self.bw.sample_bytes is not None
         assert self.bw.sample_rate is not None
+        assert self.bw.endianness is not None
         popup = dialogs.AudioSettings(
             num_channels=self.bw.num_channels,
             sample_bytes=self.bw.sample_bytes,
             sample_rate=self.bw.sample_rate,
             volume=self.bw.volume, # pyright: ignore[reportArgumentType]
+            endianness=self.bw.endianness,
             parent=self
         )
 
@@ -540,13 +802,15 @@ class MyQMainWindow(QMainWindow):
         if result:
             audio_settings = popup.get_audio_settings()
             self.player.set_audio_settings(
-                num_channels=audio_settings["num_channels"],
-                sample_bytes=audio_settings["sample_bytes"],
-                sample_rate=audio_settings["sample_rate"],
-                volume=audio_settings["volume"]
+                num_channels=audio_settings["num_channels"], # pyright: ignore[reportArgumentType]
+                sample_bytes=audio_settings["sample_bytes"], # pyright: ignore[reportArgumentType]
+                sample_rate=audio_settings["sample_rate"], # pyright: ignore[reportArgumentType]
+                volume=audio_settings["volume"], # pyright: ignore[reportArgumentType]
+                endianness=audio_settings["endianness"] # pyright: ignore[reportArgumentType]
             )
 
             self.update_seekbar()
+            self._save_app_settings()
 
     def video_settings_clicked(self) -> None:
         assert self.bw.width is not None
@@ -588,6 +852,7 @@ class MyQMainWindow(QMainWindow):
             )
             self.player.refresh_dims()
             self.player.update_image()
+            self._save_app_settings()
             # We need to wait a moment for the size hint to be computed
             QTimer.singleShot(10, self.resize_window) # pyright: ignore[reportUnknownMemberType]
 
@@ -604,6 +869,7 @@ class MyQMainWindow(QMainWindow):
             player_settings = popup.get_player_settings()
             self.player.set_fps(fps=player_settings["fps"])
             self.player.update_dims(max_dim=player_settings["max_view_dim"])
+            self._save_app_settings()
             # We need to wait a moment for the size hint to be computed
             QTimer.singleShot(10, self.resize_window) # pyright: ignore[reportUnknownMemberType]
 
@@ -680,7 +946,9 @@ class MyQMainWindow(QMainWindow):
             os.path.join(self.last_save_location, f"{self.file_savename}{constants.AudioFormatCode.MP3.value}"),
             f"{L.dialog.mp3_files} (*{constants.AudioFormatCode.MP3.value});;"
             f"{L.dialog.wav_files} (*{constants.AudioFormatCode.WAVE.value});;"
-            f"{L.dialog.flac_files} (*{constants.AudioFormatCode.FLAC.value})"
+            f"{L.dialog.flac_files} (*{constants.AudioFormatCode.FLAC.value});;"
+            f"{L.dialog.ogg_files} (*{constants.AudioFormatCode.OGG.value});;"
+            f"{L.dialog.m4a_files} (*{constants.AudioFormatCode.M4A.value})"
         )
 
         if filename != "":
@@ -806,7 +1074,9 @@ class MyQMainWindow(QMainWindow):
                 L.dialog.export_video_as,
                 os.path.join(self.last_save_location, f"{self.file_savename}{constants.VideoFormatCode.MP4.value}"),
                 f"{L.dialog.mp4_files} (*{constants.VideoFormatCode.MP4.value});;"
-                f"{L.dialog.avi_files} (*{constants.VideoFormatCode.AVI.value})"
+                f"{L.dialog.avi_files} (*{constants.VideoFormatCode.AVI.value});;"
+                f"{L.dialog.mkv_files} (*{constants.VideoFormatCode.MKV.value});;"
+                f"{L.dialog.mov_files} (*{constants.VideoFormatCode.MOV.value})"
             )
 
             if filename != "":

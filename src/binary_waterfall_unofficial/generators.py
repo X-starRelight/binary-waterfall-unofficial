@@ -2,6 +2,7 @@ import os
 import shutil
 import tempfile
 import math
+import struct # pyright: ignore[reportUnusedImport]
 from typing import IO, Any, Literal, cast
 import wave
 from PIL import Image, ImageOps
@@ -27,6 +28,7 @@ class BinaryWaterfall:
                  sample_bytes: int = cast(int, constants.DEFAULTS["sample_bytes"]),
                  sample_rate: int = cast(int, constants.DEFAULTS["sample_rate"]),
                  volume: float = cast(float, constants.DEFAULTS["file_volume"]),
+                 endianness: constants.EndiannessCode = cast(constants.EndiannessCode, constants.DEFAULTS["endianness"]),
                  flip_v: bool = cast(bool, constants.DEFAULTS["flip_v"]),
                  flip_h: bool = cast(bool, constants.DEFAULTS["flip_h"]),
                  alignment: constants.AlignmentCode = cast(constants.AlignmentCode, constants.DEFAULTS["alignment"]),
@@ -38,6 +40,7 @@ class BinaryWaterfall:
         self.sample_rate: int | None = None
         self.sample_bytes: int | None = None
         self.num_channels: int | None = None
+        self.endianness: constants.EndiannessCode | None = None
         self.color_format: list[constants.ColorFmtCode] | None = None
         self.color_bytes: int | None = None
         self.unused_color_bytes: int | None = None
@@ -81,7 +84,8 @@ class BinaryWaterfall:
             num_channels=num_channels,
             sample_bytes=sample_bytes,
             sample_rate=sample_rate,
-            volume=volume
+            volume=volume,
+            endianness=endianness
         )
 
     def __del__(self) -> None:
@@ -292,7 +296,8 @@ class BinaryWaterfall:
                            num_channels: int,
                            sample_bytes: int,
                            sample_rate: int,
-                           volume: float
+                           volume: float,
+                           endianness: constants.EndiannessCode = constants.EndiannessCode.LITTLE
                            ) -> None:
         if num_channels not in [1, 2]:
             raise ValueError("Invalid number of audio channels, must be either 1 or 2")
@@ -310,6 +315,7 @@ class BinaryWaterfall:
         self.sample_bytes = sample_bytes
         self.sample_rate = sample_rate
         self.volume = volume
+        self.endianness = endianness
 
         # Re-compute audio file
         self.compute_audio()
@@ -341,6 +347,7 @@ class BinaryWaterfall:
         assert self.sample_bytes is not None
         assert self.sample_rate is not None
         assert self.file is not None
+        assert self.endianness is not None
 
         # Delete current file if it exists
         self.delete_audio()
@@ -351,9 +358,25 @@ class BinaryWaterfall:
             f.setsampwidth(self.sample_bytes)
             f.setframerate(self.sample_rate)
             self.file.seek(0)
+
+            # Determine byte order for endianness conversion
+            needs_swap = (self.endianness == constants.EndiannessCode.BIG and self.sample_bytes > 1)
+
             assert self.file is not None
             for chunk in iter(lambda: self.file.read(4096), b""): # pyright: ignore[reportOptionalMemberAccess, reportUnknownLambdaType]
-                f.writeframesraw(chunk)
+                if needs_swap and len(chunk) >= self.sample_bytes:
+                    # Swap bytes for big-endian to little-endian conversion
+                    swapped = bytearray()
+                    for i in range(0, len(chunk) - self.sample_bytes + 1, self.sample_bytes):
+                        sample = chunk[i:i + self.sample_bytes]
+                        swapped.extend(reversed(sample))
+                    # Handle remaining bytes that don't form a complete sample
+                    remaining = len(chunk) % self.sample_bytes
+                    if remaining > 0:
+                        swapped.extend(chunk[-remaining:])
+                    f.writeframesraw(bytes(swapped))
+                else:
+                    f.writeframesraw(chunk)
 
         if self.volume != 100:
             assert self.volume is not None

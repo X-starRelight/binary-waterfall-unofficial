@@ -1,5 +1,7 @@
 import os
 import sys
+import time
+import random
 from PyQt6.QtCore import Qt
 from PyQt6.QtWidgets import QApplication
 from PyQt6.QtGui import QPalette, QColor
@@ -7,55 +9,38 @@ from PyQt6.QtGui import QPalette, QColor
 from . import window, constants
 
 
-# Main window class
-#   Handles variables related to the main window.
-#   Any actual program functionality or additional dialogs are
-#   handled using different classes
-class MainWindow:
-    def __init__(self, qt_args: list[str]):
-        # Apply dark mode on Windows systems
-        if constants.PLATFORM == constants.PlatformCode.WINDOWS: # pyright: ignore[reportUnnecessaryComparison]
-            os.environ["QT_QPA_PLATFORM"] = "windows:darkmode=1"
+def _setup_app(app: QApplication) -> None:
+    """配置应用样式和调色板"""
+    app.setStyle("fusion")
+    palette = QPalette()
+    palette.setColor(QPalette.ColorRole.Window, QColor(constants.COLORS["background"]))
+    palette.setColor(QPalette.ColorRole.WindowText, QColor(constants.COLORS["text"]))
+    palette.setColor(QPalette.ColorRole.Base, QColor(constants.COLORS["foreground"]))
+    palette.setColor(QPalette.ColorRole.AlternateBase, QColor(constants.COLORS["foreground"]))
+    palette.setColor(QPalette.ColorRole.ToolTipBase, Qt.GlobalColor.black)
+    palette.setColor(QPalette.ColorRole.ToolTipText, Qt.GlobalColor.white)
+    palette.setColor(QPalette.ColorRole.Text, Qt.GlobalColor.white)
+    palette.setColor(QPalette.ColorRole.Button, QColor(constants.COLORS["foreground"]))
+    palette.setColor(QPalette.ColorRole.ButtonText, QColor(constants.COLORS["button_text"]))
+    palette.setColor(QPalette.ColorRole.BrightText, Qt.GlobalColor.red)
+    palette.setColor(QPalette.ColorRole.Link, QColor(constants.COLORS["link"]))
+    palette.setColor(QPalette.ColorRole.Highlight, QColor(constants.COLORS["link"]))
+    palette.setColor(QPalette.ColorRole.HighlightedText, Qt.GlobalColor.black)
 
-        # Make main objects
-        self.app = QApplication(qt_args)
-        self.window = window.MyQMainWindow()
+    palette.setColorGroup(
+        QPalette.ColorGroup.Disabled,
+        palette.windowText(),
+        QColor(constants.COLORS["disabled"]),
+        palette.light(),
+        palette.dark(),
+        palette.mid(),
+        QColor(constants.COLORS["disabled_text"]),
+        palette.brightText(),
+        QColor(constants.COLORS["disabled"]),
+        palette.window()
+    )
 
-        # Setup colors
-        self.app.setStyle("fusion")
-        self.palette = QPalette()
-        self.palette.setColor(QPalette.ColorRole.Window, QColor(constants.COLORS["background"]))
-        self.palette.setColor(QPalette.ColorRole.WindowText, QColor(constants.COLORS["text"]))
-        self.palette.setColor(QPalette.ColorRole.Base, QColor(constants.COLORS["foreground"]))
-        self.palette.setColor(QPalette.ColorRole.AlternateBase, QColor(constants.COLORS["foreground"]))
-        self.palette.setColor(QPalette.ColorRole.ToolTipBase, Qt.GlobalColor.black)
-        self.palette.setColor(QPalette.ColorRole.ToolTipText, Qt.GlobalColor.white)
-        self.palette.setColor(QPalette.ColorRole.Text, Qt.GlobalColor.white)
-        self.palette.setColor(QPalette.ColorRole.Button, QColor(constants.COLORS["foreground"]))
-        self.palette.setColor(QPalette.ColorRole.ButtonText, QColor(constants.COLORS["button_text"]))
-        self.palette.setColor(QPalette.ColorRole.BrightText, Qt.GlobalColor.red)
-        self.palette.setColor(QPalette.ColorRole.Link, QColor(constants.COLORS["link"]))
-        self.palette.setColor(QPalette.ColorRole.Highlight, QColor(constants.COLORS["link"]))
-        self.palette.setColor(QPalette.ColorRole.HighlightedText, Qt.GlobalColor.black)
-
-        self.palette.setColorGroup(
-            QPalette.ColorGroup.Disabled,
-            self.palette.windowText(),
-            QColor(constants.COLORS["disabled"]),
-            self.palette.light(),
-            self.palette.dark(),
-            self.palette.mid(),
-            QColor(constants.COLORS["disabled_text"]),
-            self.palette.brightText(),
-            QColor(constants.COLORS["disabled"]),
-            self.palette.window()
-        )
-
-        self.app.setPalette(self.palette)
-
-    def run(self):
-        self.window.show()
-        self.app.exec()
+    app.setPalette(palette)
 
 
 def main(args: list[str]):
@@ -63,8 +48,26 @@ def main(args: list[str]):
         import pyi_splash # pyright: ignore[reportMissingModuleSource]
         pyi_splash.close()
 
-    main_window = MainWindow(args)
-    main_window.run()
+    # Apply dark mode on Windows systems
+    if constants.PLATFORM == constants.PlatformCode.WINDOWS: # pyright: ignore[reportUnnecessaryComparison]
+        os.environ["QT_QPA_PLATFORM"] = "windows:darkmode=1"
+
+    # QApplication 只能创建一次
+    app = QApplication(args)
+    _setup_app(app)
+
+    # 重启循环
+    while True:
+        win = window.MyQMainWindow()
+        win.show()
+        app.exec()
+
+        if not win.needs_restart:
+            break
+
+        win.deleteLater()
+        app.processEvents()
+        time.sleep(1 + ( random.randint(0, 5000) / 10000 ))
 
 
 def run():

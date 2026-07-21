@@ -1,5 +1,6 @@
 from __future__ import annotations
 from typing import Any, cast
+from moviepy import VideoClip # pyright: ignore[reportMissingTypeStubs]
 
 import os
 import shutil
@@ -15,6 +16,7 @@ from PyQt6.QtGui import QImage, QPixmap
 from PyQt6.QtWidgets import QProgressDialog
 
 from . import generators, helpers, constants
+from .lang import L
 
 
 # Image playback class
@@ -215,10 +217,19 @@ class Player:
 
         self.set_audio_file(self.bw.audio_filename)
 
+        # Reset position to start and ensure player is ready
+        self.restart()
+
         self.set_image_timestamp(self.get_position())
 
     def close_file(self) -> None:
         self.pause()
+
+        # Disconnect signals temporarily to avoid state_changed_handler during cleanup
+        try:
+            self.audio.playbackStateChanged.disconnect(self.state_changed_handler) # pyright: ignore[reportUnknownMemberType]
+        except TypeError:
+            pass
 
         self.audio.stop()
         time.sleep(0.001)  # Without a short delay here, we crash
@@ -228,6 +239,10 @@ class Player:
 
         self.restart()
         self.clear_image()
+
+        # Reconnect signals
+        self.audio.playbackStateChanged.connect(self.state_changed_handler) # pyright: ignore[reportUnknownMemberType]
+        self.set_playbutton_if_given(play=True)
 
     def file_is_open(self) -> bool:
         if self.bw.filename is None:
@@ -255,13 +270,15 @@ class Player:
                            num_channels: int,
                            sample_bytes: int,
                            sample_rate: int,
-                           volume: int
+                           volume: int,
+                           endianness: constants.EndiannessCode = constants.EndiannessCode.LITTLE
                            ) -> None:
         self.bw.set_audio_settings(
             num_channels=num_channels,
             sample_bytes=sample_bytes,
             sample_rate=sample_rate,
-            volume=volume
+            volume=volume,
+            endianness=endianness
         )
         # Re-open newly computed file
         self.set_audio_file(None)
@@ -324,12 +341,29 @@ class Renderer:
             # Just copy the .wav file
             assert self.bw.audio_filename is not None
             shutil.copy(self.bw.audio_filename, filename)
-        elif filename_ext == constants.AudioFormatCode.MP3.value:
-            # Use Pydub to export MP3
-            pydub.AudioSegment.from_wav(self.bw.audio_filename).export(filename, format="mp3") # pyright: ignore[reportUnknownMemberType]
-        elif filename_ext == constants.AudioFormatCode.FLAC.value:
-            # Use Pydub to export FLAC
-            pydub.AudioSegment.from_wav(self.bw.audio_filename).export(filename, format="flac") # pyright: ignore[reportUnknownMemberType]
+        elif filename_ext in [
+            constants.AudioFormatCode.MP3.value,
+            constants.AudioFormatCode.FLAC.value,
+            constants.AudioFormatCode.OGG.value,
+            constants.AudioFormatCode.M4A.value
+        ]:
+            # Use Pydub for format conversion (requires ffmpeg)
+            assert self.bw.audio_filename is not None
+            try:
+                audio = pydub.AudioSegment.from_wav(self.bw.audio_filename) # pyright: ignore[reportUnknownVariableType, reportUnknownMemberType]
+                if filename_ext == constants.AudioFormatCode.MP3.value:
+                    audio.export(filename, format="mp3") # pyright: ignore[reportUnknownMemberType]
+                elif filename_ext == constants.AudioFormatCode.FLAC.value:
+                    audio.export(filename, format="flac") # pyright: ignore[reportUnknownMemberType]
+                elif filename_ext == constants.AudioFormatCode.OGG.value:
+                    audio.export(filename, format="ogg", codec="libvorbis") # pyright: ignore[reportUnknownMemberType]
+                elif filename_ext == constants.AudioFormatCode.M4A.value:
+                    audio.export(filename, format="ipod", codec="aac") # pyright: ignore[reportUnknownMemberType]
+            except Exception as e:
+                error_msg = str(e)
+                if "ffmpeg" in error_msg.lower() or "winerror 2" in error_msg.lower():
+                    raise RuntimeError(L.dialog.ffmpeg_not_found) from e
+                raise RuntimeError(L.dialog.audio_export_error.format(error=str(e))) from e
 
     def get_frame_count(self, fps: float) -> int:
         audio_duration = self.bw.get_audio_length() / 1000
@@ -354,7 +388,7 @@ class Renderer:
         if image_format is None:
             image_format = constants.ImageFormatCode.PNG
 
-        for frame in range(frame_count):
+        for frame in range(frame_count + 1):
             frame_number = str(frame).rjust(frame_number_digits, "0")
             frame_filename = os.path.join(directory, f"{frame_number}{image_format.value}")
             frame_ms = round((frame / fps) * 1000)
@@ -436,10 +470,7 @@ class Renderer:
         sequence_clip = ImageSequenceClip(frames_list, fps=fps)
         audio_clip = AudioFileClip(audio_file)
 
-        # TODO: Fix this
-        video_clip = sequence_clip.set_audio(audio_clip)
-        # TODO: Control quality settings
-        # TODO: Set temp audio file location if possible
+        video_clip: VideoClip = sequence_clip.with_audio(audio_clip)
         video_clip.write_videofile(
             filename=video_file,
             codec=codec,
@@ -449,7 +480,8 @@ class Renderer:
             preset=preset,
             threads=None,
             logger=custom_logger,
-            temp_audiofile=None
+            temp_audiofile=None,
+            temp_audiofile_path=temp_dir
         )
 
         if progress_dialog is not None:

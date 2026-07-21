@@ -5,6 +5,7 @@ DEFAULTS = {
     "sample_bytes": 1,
     "sample_rate": 32000,
     "file_volume": 100,
+    "endianness": enums.EndiannessCode.LITTLE,
     "width": 48,
     "height": 48,
     "color_format_string": "bgrx",

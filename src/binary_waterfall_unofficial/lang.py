@@ -87,6 +87,7 @@ class DialogLang:
     encoder_settings: str
     hotkey_info: str
     error: str
+    warning: str
     invalid_color_format: str
     exporting_images: str
     exporting_video: str
@@ -120,6 +121,10 @@ class DialogLang:
     mp3_files: str
     wav_files: str
     flac_files: str
+    ogg_files: str
+    m4a_files: str
+    mkv_files: str
+    mov_files: str
     mp4_files: str
     avi_files: str
     abort: str
@@ -137,8 +142,26 @@ class DialogLang:
     audio_codec: str
     encoder_preset: str
     file_is_empty: str
+    file_is_small: str
     feat_disabled: str
     can_use_feat: str
+    import_language: str
+    import_language_title: str
+    import_language_filter: str
+    import_language_success: str
+    import_language_error: str
+    import_language_invalid: str
+    remove_language: str
+    remove_language_confirm: str
+    remove_language_success: str
+    fallback_language: str
+    fallback_language_title: str
+    fallback_language_desc: str
+    fallback_language_current: str
+    is_custom: str
+    ffmpeg_not_found: str
+    audio_export_error: str
+    file_is_very_small: str
 
 
 @dataclass(frozen=True)
@@ -149,6 +172,9 @@ class AudioLang:
     sample_size: str
     sample_rate: str
     file_volume: str
+    endianness: str
+    little_endian: str
+    big_endian: str
 
 
 @dataclass(frozen=True)
@@ -374,11 +400,51 @@ class LangManager:
         return self._state.fallback
 
     @property
+    def custom_codes(self) -> list[str]:
+        """返回所有自定义语言代码"""
+        return list(self._custom.keys())
+
+    @property
+    def builtin_codes(self) -> list[str]:
+        """返回所有内置语言代码"""
+        return list(self._builtin.keys())
+
+    @property
     def lang(self) -> Lang:
         """直接访问 Lang dataclass，支持 lang.menu.file 形式"""
         if self._lang is None:
             raise RuntimeError("LangManager not initialized. Call init() first.")
         return self._lang
+
+    def save_app_settings(self, settings: dict[str, Any]) -> None:
+        """Save application settings to settings.json"""
+        os.makedirs(os.path.dirname(_SETTINGS_FILE), exist_ok=True)
+        # Load existing settings first
+        existing: dict[str, Any] = {}
+        if os.path.isfile(_SETTINGS_FILE):
+            try:
+                with open(_SETTINGS_FILE, encoding="utf-8") as f:
+                    existing = json.load(f)
+            except (json.JSONDecodeError, OSError):
+                pass
+        # Merge with new settings
+        existing.update(settings)
+        with open(_SETTINGS_FILE, "w", encoding="utf-8") as f:
+            json.dump(existing, f, indent=2, ensure_ascii=False)
+
+    def load_app_settings(self) -> dict[str, Any]:
+        """Load application settings from settings.json"""
+        if not os.path.isfile(_SETTINGS_FILE):
+            return {}
+        try:
+            with open(_SETTINGS_FILE, encoding="utf-8") as f:
+                data: dict[str, Any] = json.load(f)
+            # Remove language-only keys
+            data.pop("language", None)
+            data.pop("fallback_language", None)
+            return data
+        except (json.JSONDecodeError, OSError):
+            return {}
 
 
 # ==================== 全局单例 ====================

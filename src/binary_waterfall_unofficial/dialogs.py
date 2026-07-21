@@ -22,6 +22,7 @@ class AudioSettings(QDialog):
                  sample_bytes: int,
                  sample_rate: int,
                  volume: int,
+                 endianness: constants.EndiannessCode = constants.EndiannessCode.LITTLE,
                  parent: QWidget | None = None
                  ) -> None:
         super().__init__(parent=parent)
@@ -36,6 +37,7 @@ class AudioSettings(QDialog):
         self.sample_bytes = sample_bytes
         self.sample_rate = sample_rate
         self.volume = volume
+        self.endianness = endianness
 
         self.channels_label = QLabel(L.audio.channels)
         self.channels_label.setAlignment(Qt.AlignmentFlag.AlignVCenter | Qt.AlignmentFlag.AlignRight)
@@ -85,6 +87,17 @@ class AudioSettings(QDialog):
         self.volume_entry.setValue(self.volume)
         self.volume_entry.valueChanged.connect(self.volume_entry_changed) # pyright: ignore[reportUnknownMemberType]
 
+        self.endianness_label = QLabel(L.audio.endianness)
+        self.endianness_label.setAlignment(Qt.AlignmentFlag.AlignVCenter | Qt.AlignmentFlag.AlignRight)
+
+        self.endianness_entry = QComboBox()
+        self.endianness_entry.addItems([L.audio.little_endian, L.audio.big_endian]) # pyright: ignore[reportUnknownMemberType]
+        if self.endianness == constants.EndiannessCode.LITTLE:
+            self.endianness_entry.setCurrentIndex(0)
+        elif self.endianness == constants.EndiannessCode.BIG:
+            self.endianness_entry.setCurrentIndex(1)
+        self.endianness_entry.currentIndexChanged.connect(self.endianness_entry_changed) # pyright: ignore[reportUnknownMemberType]
+
         self.confirm_buttons = QDialogButtonBox(QDialogButtonBox.StandardButton.Ok | QDialogButtonBox.StandardButton.Cancel)
         self.confirm_buttons.accepted.connect(self.accept) # pyright: ignore[reportUnknownMemberType]
         self.confirm_buttons.rejected.connect(self.reject) # pyright: ignore[reportUnknownMemberType]
@@ -99,18 +112,21 @@ class AudioSettings(QDialog):
         self.main_layout.addWidget(self.sample_rate_entry, 2, 1)
         self.main_layout.addWidget(self.volume_label, 3, 0)
         self.main_layout.addWidget(self.volume_entry, 3, 1)
-        self.main_layout.addWidget(self.confirm_buttons, 4, 0, 1, 2)
+        self.main_layout.addWidget(self.endianness_label, 4, 0)
+        self.main_layout.addWidget(self.endianness_entry, 4, 1)
+        self.main_layout.addWidget(self.confirm_buttons, 5, 0, 1, 2)
 
         self.setLayout(self.main_layout)
 
         self.resize_window()
 
-    def get_audio_settings(self) -> dict[str, int]:
-        result: dict[str, int] = dict()
+    def get_audio_settings(self) -> dict[str, int | constants.EndiannessCode]:
+        result: dict[str, int | constants.EndiannessCode] = dict()
         result["num_channels"] = self.num_channels
         result["sample_bytes"] = self.sample_bytes
         result["sample_rate"] = self.sample_rate
         result["volume"] = self.volume
+        result["endianness"] = self.endianness
 
         return result
 
@@ -135,6 +151,12 @@ class AudioSettings(QDialog):
 
     def volume_entry_changed(self, value: int) -> None:
         self.volume = value
+
+    def endianness_entry_changed(self, idx: int) -> None:
+        if idx == 0:
+            self.endianness = constants.EndiannessCode.LITTLE
+        elif idx == 1:
+            self.endianness = constants.EndiannessCode.BIG
 
     def resize_window(self) -> None:
         self.setFixedSize(self.sizeHint())
@@ -752,6 +774,10 @@ class VideoEncoderSettings(QDialog):
             self.codec = constants.VideoCodecCode.LIBX264
         elif self.video_format == constants.VideoFormatCode.AVI:
             self.codec = constants.VideoCodecCode.PNG
+        elif self.video_format == constants.VideoFormatCode.MKV:
+            self.codec = constants.VideoCodecCode.LIBX265
+        elif self.video_format == constants.VideoFormatCode.MOV:
+            self.codec = constants.VideoCodecCode.PRORES
         self.audio_codec = constants.AudioCodecCode.MP3
         self.preset = constants.EncoderPresetCode.ULTRAFAST
 
@@ -771,21 +797,34 @@ class VideoEncoderSettings(QDialog):
                 self.codec_entry.setCurrentIndex(0)
             elif self.codec == constants.VideoCodecCode.RAW:
                 self.codec_entry.setCurrentIndex(1)
+        elif self.video_format == constants.VideoFormatCode.MKV:
+            self.codec_entry.addItems(["LIBX265", "LIBX264"]) # pyright: ignore[reportUnknownMemberType]
+            if self.codec == constants.VideoCodecCode.LIBX265:
+                self.codec_entry.setCurrentIndex(0)
+            elif self.codec == constants.VideoCodecCode.LIBX264:
+                self.codec_entry.setCurrentIndex(1)
+        elif self.video_format == constants.VideoFormatCode.MOV:
+            self.codec_entry.addItems(["ProRes"]) # pyright: ignore[reportUnknownMemberType]
+            self.codec_entry.setCurrentIndex(0)
         self.codec_entry.currentIndexChanged.connect(self.codec_entry_changed) # pyright: ignore[reportUnknownMemberType]
 
         self.audio_codec_entry_label = QLabel(L.dialog.audio_codec)
         self.audio_codec_entry_label.setAlignment(Qt.AlignmentFlag.AlignVCenter | Qt.AlignmentFlag.AlignRight)
 
         self.audio_codec_entry = QComboBox()
-        self.audio_codec_entry.addItems(["MP3", "M4A", "WAV 16-bit", "WAV 32-bit"]) # pyright: ignore[reportUnknownMemberType]
+        self.audio_codec_entry.addItems(["MP3", "M4A (AAC)", "FLAC", "OGG (Vorbis)", "WAV 16-bit", "WAV 32-bit"]) # pyright: ignore[reportUnknownMemberType]
         if self.audio_codec == constants.AudioCodecCode.MP3:
             self.audio_codec_entry.setCurrentIndex(0)
         elif self.audio_codec == constants.AudioCodecCode.M4A:
             self.audio_codec_entry.setCurrentIndex(1)
-        elif self.audio_codec == constants.AudioCodecCode.WAV16:
+        elif self.audio_codec == constants.AudioCodecCode.FLAC:
             self.audio_codec_entry.setCurrentIndex(2)
-        elif self.audio_codec == constants.AudioCodecCode.WAV32:
+        elif self.audio_codec == constants.AudioCodecCode.VORBIS:
             self.audio_codec_entry.setCurrentIndex(3)
+        elif self.audio_codec == constants.AudioCodecCode.WAV16:
+            self.audio_codec_entry.setCurrentIndex(4)
+        elif self.audio_codec == constants.AudioCodecCode.WAV32:
+            self.audio_codec_entry.setCurrentIndex(5)
         self.audio_codec_entry.currentIndexChanged.connect(self.audio_codec_entry_changed) # pyright: ignore[reportUnknownMemberType]
 
         self.preset_entry_label = QLabel(L.dialog.encoder_preset)
@@ -866,6 +905,13 @@ class VideoEncoderSettings(QDialog):
                 self.codec = constants.VideoCodecCode.PNG
             elif value == 1:
                 self.codec = constants.VideoCodecCode.RAW
+        elif self.video_format == constants.VideoFormatCode.MKV:
+            if value == 0:
+                self.codec = constants.VideoCodecCode.LIBX265
+            elif value == 1:
+                self.codec = constants.VideoCodecCode.LIBX264
+        elif self.video_format == constants.VideoFormatCode.MOV:
+            self.codec = constants.VideoCodecCode.PRORES
 
     def audio_codec_entry_changed(self, value: int) -> None:
         if value == 0:
@@ -873,8 +919,12 @@ class VideoEncoderSettings(QDialog):
         elif value == 1:
             self.audio_codec = constants.AudioCodecCode.M4A
         elif value == 2:
-            self.audio_codec = constants.AudioCodecCode.WAV16
+            self.audio_codec = constants.AudioCodecCode.FLAC
         elif value == 3:
+            self.audio_codec = constants.AudioCodecCode.VORBIS
+        elif value == 4:
+            self.audio_codec = constants.AudioCodecCode.WAV16
+        elif value == 5:
             self.audio_codec = constants.AudioCodecCode.WAV32
 
     def preset_entry_changed(self, value: int) -> None:

@@ -1,7 +1,8 @@
 import os
 import json
+import sys
 from typing import Any
-from PyQt6.QtCore import Qt, QTimer, QCoreApplication
+from PyQt6.QtCore import Qt, QTimer
 from PyQt6.QtWidgets import (
     QMainWindow, QMenuBar, QMenu, QWidget, QGridLayout, QHBoxLayout, QLabel,
     QFileDialog, QMessageBox, QSlider, QProgressDialog
@@ -10,6 +11,11 @@ from PyQt6.QtGui import QPixmap, QIcon, QAction, QKeyEvent, QMouseEvent
 
 from . import constants, generators, outputs, widgets, dialogs
 from .lang import L, get_manager
+
+
+def _restart_run():
+    from . import core
+    core.main(sys.argv)
 
 
 def show_cannotuse_feat(parent: QWidget | None = None):
@@ -29,7 +35,6 @@ class MyQMainWindow(QMainWindow):
         super().__init__()
         self.file_savename: str = ""
         self.muted: bool = False
-        self.needs_restart: bool = False
 
         
         self.setWindowTitle(L.menu.title)
@@ -491,9 +496,13 @@ class MyQMainWindow(QMainWindow):
             self._restart_application()
 
     def _restart_application(self) -> None:
-        """重启应用（由 core.py 的主循环处理）"""
-        self.needs_restart = True
-        QCoreApplication.quit()
+        """完全重启应用进程"""
+        self.destroy()
+        from multiprocessing import Process
+        t = Process(target=_restart_run)
+        t.daemon = False
+        t.start()
+        sys.exit(0)
 
     def _load_app_settings(self) -> None:
         """Load saved application settings"""

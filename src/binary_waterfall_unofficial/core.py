@@ -1,7 +1,5 @@
 import os
 import sys
-import time
-import random
 from PyQt6.QtCore import Qt
 from PyQt6.QtWidgets import QApplication
 from PyQt6.QtGui import QPalette, QColor
@@ -56,18 +54,9 @@ def main(args: list[str]):
     app = QApplication(args)
     _setup_app(app)
 
-    # 重启循环
-    while True:
-        win = window.MyQMainWindow()
-        win.show()
-        app.exec()
-
-        if not win.needs_restart:
-            break
-
-        win.deleteLater()
-        app.processEvents()
-        time.sleep(1 + ( random.randint(0, 5000) / 10000 ))
+    win = window.MyQMainWindow()
+    win.show()
+    app.exec()
 
 
 def run():

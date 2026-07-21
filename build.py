@@ -36,6 +36,21 @@ def main():
         '--output-dir=dist',
     ]
 
+    # ---------- Qt6 多媒体插件 DLL ----------
+    qt_multimedia_plugins = os.path.join(
+        os.path.dirname(os.path.abspath(sys.executable)), '..', 'Lib', 'site-packages',
+        'PyQt6', 'Qt6', 'plugins', 'multimedia'
+    )
+    qt_multimedia_plugins = os.path.normpath(qt_multimedia_plugins)
+    if os.path.isdir(qt_multimedia_plugins):
+        import glob as glob_mod
+        dll_files = glob_mod.glob(os.path.join(qt_multimedia_plugins, '*.dll'))
+        for dll in dll_files:
+            dll_name = os.path.basename(dll)
+            cmd.append(f'--include-data-files={dll}=PyQt6/Qt6/plugins/multimedia/{dll_name}')
+    else:
+        print(f"警告：未找到 Qt6 多媒体插件目录 {qt_multimedia_plugins}，音频播放可能无法工作。")
+
     # ---------- 通用数据目录 ----------
     data_dirs = [
         # ('constants', 'constants'),

@@ -282,22 +282,16 @@ class Player:
         self.progress_dialog.show()
     
     def update_progress(self, percent: int, text: str) -> None:
-        try:
-            if self.progress_dialog is not None:
-                self.progress_dialog.setValue(percent)
-                self.progress_dialog.setLabelText(text)
-        except RuntimeError:
-            # Dialog was deleted while signal was queued
-            pass
+        dialog = self.progress_dialog
+        if dialog is not None:
+            dialog.setValue(percent)
+            dialog.setLabelText(text)
     
     def _hide_progress_bar(self) -> None:
-        try:
-            if self.progress_dialog is not None:
-                self.progress_dialog.close()
-                self.progress_dialog = None
-        except RuntimeError:
-            # Dialog was already deleted
+        dialog = self.progress_dialog
+        if dialog is not None:
             self.progress_dialog = None
+            dialog.close()
 
     def close_file(self) -> None:
         # Interrupt all running workers

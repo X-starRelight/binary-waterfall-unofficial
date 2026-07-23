@@ -225,6 +225,15 @@ class AboutLang:
 
 
 @dataclass(frozen=True)
+class ProgressLang:
+    opening_file: str
+    generating_audio: str
+    pre_rendering_frames: str
+    splicing_final_video: str
+    wrapping_up: str
+
+
+@dataclass(frozen=True)
 class Lang:
     """完整的语言 dataclass，字段名静态定义，值全部从 JSON 加载"""
     menu: MenuLang
@@ -238,7 +247,7 @@ class Lang:
     player: PlayerLang
     hotkeys: HotkeysLang
     about: AboutLang
-
+    progress: ProgressLang
 
 # ==================== dataclass 构建辅助 ====================
 
@@ -263,6 +272,7 @@ def _build_lang(data: dict[str, Any]) -> Lang:
         player=_build_from_dict(PlayerLang, data.get("player", {})),
         hotkeys=_build_from_dict(HotkeysLang, data.get("hotkeys", {})),
         about=_build_from_dict(AboutLang, data.get("about", {})),
+        progress=_build_from_dict(ProgressLang, data.get("progress", {})),
     )
 
 

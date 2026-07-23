@@ -60,7 +60,7 @@
     "export_complete_audio": "音频导出成功！",
     "export_complete_sequence": "图像序列导出成功！",
     "export_complete_video": "视频导出成功！",
-    "export_aborted": "导出已中止",
+    "export_aborted": "中止导出",
     "export_aborted_frame": "图像导出已中止！",
     "export_aborted_sequence": "图像序列导出已中止！",
     "export_aborted_video": "视频导出已中止！",
@@ -145,7 +145,7 @@
     "fps": "帧率："
   },
   "hotkeys": {
-    "play_pause": "播放/暂停：",
+    "play_pause": "播放 / 暂停：",
     "forward": "快进：",
     "back": "后退：",
     "frame_forward": "逐帧前进：",
@@ -164,5 +164,12 @@
     "o_project_home": "原项目主页：",
     "m_project_home": "本更新版本项目主页：",
     "o_donate": "给原作者捐赠："
+  },
+  "progress": {
+    "opening_file": "正在打开文件……",
+    "generating_audio": "正在生成音频……",
+    "pre_rendering_frames": "正在预渲染帧……",
+    "splicing_final_video": "正在合成最终视频文件……（程序可能会卡顿）",
+    "wrapping_up": "差不多了……"
   }
 }

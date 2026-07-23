@@ -60,7 +60,7 @@
     "export_complete_audio": "Export audio successful!",
     "export_complete_sequence": "Export image sequence successful!",
     "export_complete_video": "Export video successful!",
-    "export_aborted": "Export Aborted",
+    "export_aborted": "Stop Export",
     "export_aborted_frame": "Export image aborted!",
     "export_aborted_sequence": "Export image sequence aborted!",
     "export_aborted_video": "Export video aborted!",
@@ -164,5 +164,12 @@
     "o_project_home": "Original project homepage:",
     "m_project_home": "Updated version homepage:",
     "o_donate": "Donate to the original author:"
+  },
+  "progress": {
+    "opening_file": "Opening file...",
+    "generating_audio": "Generating audio...",
+    "pre_rendering_frames": "Pre-rendering frames...",
+    "splicing_final_video": "Splicing final video file... (The program might lag)",
+    "wrapping_up": "Wrapping up..."
   }
 }

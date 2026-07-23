@@ -224,7 +224,7 @@ class Player:
             return
         
         # Show progress bar
-        self._show_progress_bar("正在打开文件...")
+        self._show_progress_bar(L.progress.opening_file)
         
         # Start FileWorker
         self.file_worker = FileWorker(filename, self.bw)
@@ -234,7 +234,7 @@ class Player:
         self.file_worker.start()
     
     def _on_file_ready(self, info: dict) -> None: # pyright: ignore[reportUnknownParameterType, reportMissingTypeArgument]
-        self.update_progress(40, "正在生成音频...")
+        self.update_progress(40, L.progress.generating_audio)
         
         # Start AudioWorker
         self.audio_worker = AudioWorker(self.bw)
@@ -246,7 +246,7 @@ class Player:
     def _on_audio_ready(self, audio_path: str) -> None:
         self.set_audio_file(audio_path)
         self.set_playbutton_if_given(play=True)
-        self.update_progress(90, "预渲染帧...")
+        self.update_progress(90, L.progress.pre_rendering_frames)
         
         # Start FrameWorker after audio is ready (needs audio_length_ms)
         self.frame_worker = FrameWorker(self.bw)
@@ -271,11 +271,11 @@ class Player:
     
     def _on_worker_error(self, error: str) -> None:
         self._hide_progress_bar()
-        QMessageBox.warning(None, "错误", error)
+        QMessageBox.critical(None, L.dialog.error, error)
     
     def _show_progress_bar(self, text: str) -> None:
         self.progress_dialog = QProgressDialog(text, None, 0, 100)
-        self.progress_dialog.setWindowTitle("正在打开文件")
+        self.progress_dialog.setWindowTitle(L.progress.opening_file)
         self.progress_dialog.setWindowModality(Qt.WindowModality.WindowModal)
         self.progress_dialog.setMinimumDuration(0)
         self.progress_dialog.setValue(0)
@@ -544,7 +544,7 @@ class Renderer:
             if progress_dialog.wasCanceled():
                 shutil.rmtree(temp_dir)
                 return
-            progress_dialog.setLabelText("Splicing final video file... (program may lag)")
+            progress_dialog.setLabelText(L.progress.splicing_final_video)
 
         # Export audio
         self.export_audio(audio_file)
@@ -585,7 +585,7 @@ class Renderer:
                 return
 
             # Reset progress dialog and set to exit on completion
-            progress_dialog.setLabelText("Wrapping up...")
+            progress_dialog.setLabelText(L.progress.wrapping_up)
             progress_dialog.setValue(0)
             progress_dialog.setMaximum(100)
             progress_dialog.setAutoReset(True)

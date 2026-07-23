@@ -20,14 +20,32 @@ Modified version maintained by XstarRelight (xr):
 https://github.com/X-starRelight/binary-waterfall-unofficial
 ```
 
-### Showcase Video
-The author of this project hasn't recorded any videos yet.
-
 ### Original Author
 - Ella Jameson
 
 ### Modified Author
 - XstarRelight (xr).
+
+### Compared with the original version, what has been added/changed/removed?
+
+- Added multi-language (i18n) support
+- Switched the tech stack to PyQt6 instead of PyQt5
+- Switched the compiler to Nuitka for building
+- Bumped the Python version to 3.13 or higher
+- Added the ***audioop-lts*** dependency so that certain legacy dependencies work with the new Python version
+- Added ***numpy*** to improve performance
+- Added Rust and ***senri-ffi*** for further performance optimization
+- Added ***pytest*** for partial unit testing
+- Made file opening/loading asynchronous and faster
+- No longer published on PyPI; instead released as a standalone application
+- Cross‑platform support
+- Fixed/Modified/Added/Removed some issues from the original project:
+  - [#9](https://github.com/nimaid/binary-waterfall/issues/9) – partially
+  - [#24](https://github.com/nimaid/binary-waterfall/issues/24) – completely
+  - [#30](https://github.com/nimaid/binary-waterfall/issues/30) & [#39](https://github.com/nimaid/binary-waterfall/issues/39) – completely
+  - [#40](https://github.com/nimaid/binary-waterfall/issues/40) – completely
+  - [#41](https://github.com/nimaid/binary-waterfall/issues/41) – completely
+
 
 ### License
 This project is released under the GNU GPL v3.0 open-source license.
@@ -186,14 +204,31 @@ The main window consists of three areas:
 https://github.com/X-starRelight/binary-waterfall-unofficial
 ```
 
-### 展示视频
-本项目作者暂未录制视频。
-
 ### 原作者
 - Ella Jameson
 
 ### 修改作者
 - XstarRelight (xr)
+
+### 相比较原版，增加/修改/删除了什么？
+
+- 新增了多语言（i18n）支持
+- 切换了技术栈为 PyQt6 ，而不是 PyQt5 。
+- 使用 Nuitka 进行编译。
+- 将 Python 版本提升为 3.13 以上
+- 增加 ***audioop-lts*** 依赖库使得一些原本的依赖库能在新的 Python 版本上使用
+- 增加 ***numpy*** 优化速度
+- 增加 Rust 和 ***senri-ffi*** 进一步优化速度
+- 增加 ***pytest*** 进行部分单元测试
+- 使文件打开/加载变得异步和更快
+- 不再发布在 pypi 上，而是单独发布为软件。
+- 跨平台支持
+- 修复/修改/增加/删除源项目的部分 Issues
+  - [#9](https://github.com/nimaid/binary-waterfall/issues/9) - 部分
+  - [#24](https://github.com/nimaid/binary-waterfall/issues/24) - 全部
+  - [#30](https://github.com/nimaid/binary-waterfall/issues/30) & [#39](https://github.com/nimaid/binary-waterfall/issues/39) - 全部
+  - [#40](https://github.com/nimaid/binary-waterfall/issues/40) - 全部
+  - [#41](https://github.com/nimaid/binary-waterfall/issues/41) - 全部
 
 ### 许可证
 本项目使用 GNU GPL v3.0 开源发布。
@@ -219,6 +254,7 @@ uv run binary_waterfall_unofficial.py
 
 #### 编译：
 
+在项目根目录下执行：
 ``` bash
 uv run build.py
 ```

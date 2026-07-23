@@ -10,13 +10,14 @@ import tempfile
 import pydub # pyright: ignore[reportMissingTypeStubs]
 from moviepy import ImageSequenceClip, AudioFileClip # pyright: ignore[reportMissingTypeStubs]
 from PIL import Image
-from PyQt6.QtCore import QUrl
+from PyQt6.QtCore import QUrl, Qt
 from PyQt6.QtMultimedia import QMediaPlayer, QAudioOutput
 from PyQt6.QtGui import QImage, QPixmap
-from PyQt6.QtWidgets import QProgressDialog
+from PyQt6.QtWidgets import QProgressDialog, QMessageBox
 
 from . import generators, helpers, constants
 from .lang import L
+from .workers import FileWorker, AudioWorker, FrameWorker
 
 
 # Image playback class
@@ -69,6 +70,12 @@ class Player:
 
         # Setup change state handler
         self.audio.playbackStateChanged.connect(self.state_changed_handler) # pyright: ignore[reportUnknownMemberType]
+        
+        # Async workers
+        self.file_worker: FileWorker | None = None
+        self.audio_worker: AudioWorker | None = None
+        self.frame_worker: FrameWorker | None = None
+        self.progress_dialog: QProgressDialog | None = None
 
     def __del__(self) -> None:
         self.running = False
@@ -213,16 +220,90 @@ class Player:
     def open_file(self, filename: str | None) -> None:
         self.close_file()
 
-        self.bw.change_filename(filename)
-
-        self.set_audio_file(self.bw.audio_filename)
-
-        # Reset position to start and ensure player is ready
-        self.restart()
-
-        self.set_image_timestamp(self.get_position())
+        if filename is None:
+            return
+        
+        # Show progress bar
+        self._show_progress_bar("正在打开文件...")
+        
+        # Start FileWorker
+        self.file_worker = FileWorker(filename, self.bw)
+        self.file_worker.progress.connect(self._on_worker_progress)
+        self.file_worker.finished.connect(self._on_file_ready)
+        self.file_worker.error.connect(self._on_worker_error)
+        self.file_worker.start()
+    
+    def _on_file_ready(self, info: dict) -> None:
+        self.update_progress(40, "正在生成音频...")
+        
+        # Start AudioWorker
+        self.audio_worker = AudioWorker(self.bw)
+        self.audio_worker.progress.connect(self._on_worker_progress)
+        self.audio_worker.finished.connect(self._on_audio_ready)
+        self.audio_worker.error.connect(self._on_worker_error)
+        self.audio_worker.start()
+        
+        # Start FrameWorker
+        self.frame_worker = FrameWorker(self.bw)
+        self.frame_worker.progress.connect(self._on_worker_progress)
+        self.frame_worker.frame_ready.connect(self._on_frame_ready)
+        self.frame_worker.finished.connect(self._on_frames_ready)
+        self.frame_worker.error.connect(self._on_worker_error)
+        self.frame_worker.start()
+    
+    def _on_audio_ready(self, audio_path: str) -> None:
+        self.set_audio_file(audio_path)
+        self.set_playbutton_if_given(play=True)
+        self._hide_progress_bar()
+        self.set_image_timestamp(0)
+    
+    def _on_frame_ready(self, index: int, frame: QImage) -> None:
+        # Frame cached, available for playback
+        pass
+    
+    def _on_frames_ready(self) -> None:
+        # All frames pre-rendered
+        pass
+    
+    def _on_worker_progress(self, percent: int, text: str) -> None:
+        self.update_progress(percent, text)
+    
+    def _on_worker_error(self, error: str) -> None:
+        self._hide_progress_bar()
+        QMessageBox.warning(None, "错误", error)
+    
+    def _show_progress_bar(self, text: str) -> None:
+        self.progress_dialog = QProgressDialog(text, None, 0, 100)
+        self.progress_dialog.setWindowTitle("正在打开文件")
+        self.progress_dialog.setWindowModality(Qt.WindowModality.WindowModal)
+        self.progress_dialog.setMinimumDuration(0)
+        self.progress_dialog.setValue(0)
+        self.progress_dialog.show()
+    
+    def update_progress(self, percent: int, text: str) -> None:
+        if self.progress_dialog is not None:
+            self.progress_dialog.setValue(percent)
+            self.progress_dialog.setLabelText(text)
+    
+    def _hide_progress_bar(self) -> None:
+        if self.progress_dialog is not None:
+            self.progress_dialog.close()
+            self.progress_dialog = None
 
     def close_file(self) -> None:
+        # Interrupt all running workers
+        for worker in [self.file_worker, self.audio_worker, self.frame_worker]:
+            if worker and worker.isRunning():
+                worker.interrupt()
+                worker.wait(3000)  # Wait up to 3 seconds
+        
+        self.file_worker = None
+        self.audio_worker = None
+        self.frame_worker = None
+        
+        # Hide progress bar
+        self._hide_progress_bar()
+        
         self.pause()
 
         # Disconnect signals temporarily to avoid state_changed_handler during cleanup
@@ -273,6 +354,10 @@ class Player:
                            volume: int,
                            endianness: constants.EndiannessCode = constants.EndiannessCode.LITTLE
                            ) -> None:
+        # Stop playback and release file lock before regenerating audio
+        self.audio.stop()
+        self.set_audio_file(None)
+
         self.bw.set_audio_settings(
             num_channels=num_channels,
             sample_bytes=sample_bytes,
@@ -281,7 +366,6 @@ class Player:
             endianness=endianness
         )
         # Re-open newly computed file
-        self.set_audio_file(None)
         self.set_audio_file(self.bw.audio_filename)
 
 

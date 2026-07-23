@@ -37,7 +37,8 @@ try:
 
     # Search paths: target/release first, then alongside this file
     search_paths = [
-        Path(__file__).parent.parent.parent / 'bw_accelerator' / 'target' / 'release' / lib_name,
+        # Path(__file__).parent.parent.parent / 'bw_accelerator' / 'target' / 'release' / lib_name,
+        Path(__file__).parent / 'bw_accelerator' / lib_name,
         Path(__file__).parent / lib_name,
         Path(__file__).parent / 'lib' / lib_name,
     ]

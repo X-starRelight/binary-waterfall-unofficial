@@ -3,10 +3,25 @@ Nuitka 打包脚本
 """
 
 import os
+import shutil
 import sys
 import platform
 import subprocess
 import yaml
+
+
+
+# Determine library path
+if sys.platform == 'win32':
+    lib_name = 'bw_accelerator.dll'
+    lib_suffix = 'dll'
+elif sys.platform == 'darwin':
+    lib_name = 'libbw_accelerator.dylib'
+    lib_suffix = 'dylib'
+else:
+    lib_name = 'libbw_accelerator.so'
+    lib_suffix = 'so'
+
 
 def main():
     base_dir = os.path.dirname(os.path.abspath(__file__))
@@ -37,24 +52,22 @@ def main():
     ]
 
     # ---------- Qt6 多媒体插件 DLL ----------
+    import PyQt6; 
     qt_multimedia_plugins = os.path.join(
-        os.path.dirname(os.path.abspath(sys.executable)), '..', 'Lib', 'site-packages',
-        'PyQt6', 'Qt6', 'plugins', 'multimedia'
+        PyQt6.__path__[0], 'Qt6', 'plugins', 'multimedia'
     )
     qt_multimedia_plugins = os.path.normpath(qt_multimedia_plugins)
     if os.path.isdir(qt_multimedia_plugins):
         import glob as glob_mod
-        dll_files = glob_mod.glob(os.path.join(qt_multimedia_plugins, '*.dll'))
+        dll_files = glob_mod.glob(os.path.join(qt_multimedia_plugins, f'*.{lib_suffix}'))
         for dll in dll_files:
             dll_name = os.path.basename(dll)
             cmd.append(f'--include-data-files={dll}=PyQt6/Qt6/plugins/multimedia/{dll_name}')
     else:
-        print(f"警告：未找到 Qt6 多媒体插件目录 {qt_multimedia_plugins}，音频播放可能无法工作。")
+        print(f"警告：未找到 Qt6 多媒体插件目录 {qt_multimedia_plugins}，播放预览可能无法工作。")
 
     # ---------- 通用数据目录 ----------
     data_dirs = [
-        # ('constants', 'constants'),
-        # ('helpers', 'helpers'),
         ('langs', 'langs'),
         ('resources', 'resources'),
     ]
@@ -82,13 +95,13 @@ def main():
 
     # 其他字段直接传递
     if ver.get('CompanyName'):
-        cmd.append(f'--company-name=\"{ver["CompanyName"]}\"')
+        cmd.append(f'--company-name={ver["CompanyName"]}')
     if ver.get('FileDescription'):
-        cmd.append(f'--file-description=\"{ver["FileDescription"]}\"')
+        cmd.append(f'--file-description={ver["FileDescription"]}')
     if ver.get('ProductName'):
-        cmd.append(f'--product-name=\"{ver["ProductName"]}\"')
+        cmd.append(f'--product-name={ver["ProductName"]}')
     if ver.get('LegalCopyright'):
-        cmd.append(f'--copyright=\"{ver["LegalCopyright"]}\"')
+        cmd.append(f'--copyright={ver["LegalCopyright"]}')
     # InternalName 和 OriginalFilename 没有直接对应选项，但可忽略或通过 --product-name 包含
 
     # ---------- 平台专用参数 ----------
@@ -118,7 +131,15 @@ def main():
             result = subprocess.run(rust_cmd, capture_output=True, text=True, timeout=300)
             if result.returncode == 0:
                 print("Rust 加速模块编译成功！")
-                # Copy the DLL to the output directory will be handled by Nuitka include
+                src_lib = os.path.join(rust_dir, 'target', 'release', lib_name)
+                dst_lib = os.path.join(base_dir, 'src', 'binary_waterfall_unofficial', 'bw_accelerator', lib_name)
+                os.makedirs(os.path.dirname(dst_lib), exist_ok=True)
+                shutil.copy2(src_lib, dst_lib)
+                import glob as glob_mod
+                dll_files = glob_mod.glob(os.path.join(base_dir, 'src', 'binary_waterfall_unofficial', 'bw_accelerator', f'*.{lib_suffix}'))
+                for dll in dll_files:
+                    dll_name = os.path.basename(dll)
+                    cmd.append(f'--include-data-files={dll}=bw_accelerator/{dll_name}')
             else:
                 print(f"警告：Rust 编译失败，将使用 numpy 回退路径：\n{result.stderr}")
         except FileNotFoundError:
@@ -136,6 +157,7 @@ def main():
         sys.exit(1)
     else:
         print("编译完成！")
+        
 
 if __name__ == '__main__':
     main()

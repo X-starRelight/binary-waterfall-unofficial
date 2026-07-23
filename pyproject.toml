@@ -1,6 +1,6 @@
 [project]
 name = "binary-waterfall-unofficial"
-version = "3.7.0"
+version = "3.8.0"
 readme = "README.md"
 description = "A Raw Data Media Player (Unofficial Enhanced Version)"
 license= {file = "LICENSE"}
@@ -30,6 +30,7 @@ dependencies = [
     "proglog==0.1.12",
     "numpy==2.5.1",
     "senri-ffi==0.1.0",
+    "pytest==9.1.1",
 ]
 requires-python = ">=3.13"
 

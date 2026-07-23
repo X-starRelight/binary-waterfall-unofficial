@@ -166,3 +166,8 @@ src/bw_accelerator/target/
 
 # dev
 docs_/
+
+# Dynamic library
+*.dll
+*.so
+*.dylib

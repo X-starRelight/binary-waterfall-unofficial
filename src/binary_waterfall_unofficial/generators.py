@@ -12,6 +12,20 @@ from PyQt6.QtGui import QImage
 from .constants.enums import ColorFmtCode, ColorModeCode
 from . import constants, helpers
 
+# Performance acceleration
+try:
+    from . import rust_bridge
+    _RUST_AVAILABLE: bool = rust_bridge.is_available()
+except Exception:
+    _RUST_AVAILABLE: bool = False # pyright: ignore[reportConstantRedefinition]
+
+if not _RUST_AVAILABLE:
+    try:
+        from . import ngen as rust_bridge
+        _RUST_AVAILABLE: bool = True # pyright: ignore[reportConstantRedefinition]
+    except Exception:
+        _RUST_AVAILABLE: bool = False # pyright: ignore[reportConstantRedefinition]
+
 
 # Binary Waterfall abstraction class
 #   Provides an abstract object for converting binary files
@@ -56,6 +70,7 @@ class BinaryWaterfall:
         self.flip_h: bool | None = None
         self.alignment: constants.AlignmentCode | None = None
         self.playhead_visible: bool | None = None
+        self._rust_loaded: bool = False
 
         # Make the temp dir for the class instance
         self.temp_dir: str = tempfile.mkdtemp()
@@ -92,6 +107,12 @@ class BinaryWaterfall:
         self.cleanup()
 
     def close_file(self) -> None:
+        if _RUST_AVAILABLE and self._rust_loaded:
+            try:
+                rust_bridge.unload_file() # pyright: ignore[reportPossiblyUnboundVariable]
+            except Exception:
+                pass
+            self._rust_loaded = False
         if self.file is not None:
             self.file.close()
             self.file = None
@@ -127,6 +148,14 @@ class BinaryWaterfall:
             self.temp_dir,
             _file_main_name + os.path.extsep + "wav"
         )
+
+        # Try to load via Rust mmap
+        if _RUST_AVAILABLE:
+            try:
+                rust_bridge.load_file(self.filename) # pyright: ignore[reportPossiblyUnboundVariable]
+                self._rust_loaded = True
+            except Exception:
+                self._rust_loaded = False
 
     def set_dims(self, width: int, height: int) -> None:
         if width < 4:

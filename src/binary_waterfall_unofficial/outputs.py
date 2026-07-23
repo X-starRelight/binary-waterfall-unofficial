@@ -228,19 +228,19 @@ class Player:
         
         # Start FileWorker
         self.file_worker = FileWorker(filename, self.bw)
-        self.file_worker.progress.connect(self._on_worker_progress)
-        self.file_worker.finished.connect(self._on_file_ready)
-        self.file_worker.error.connect(self._on_worker_error)
+        self.file_worker.progress.connect(self._on_worker_progress) # pyright: ignore[reportUnknownMemberType]
+        self.file_worker.finished.connect(self._on_file_ready) # pyright: ignore[reportUnknownMemberType]
+        self.file_worker.error.connect(self._on_worker_error) # pyright: ignore[reportUnknownMemberType]
         self.file_worker.start()
     
-    def _on_file_ready(self, info: dict) -> None:
+    def _on_file_ready(self, info: dict) -> None: # pyright: ignore[reportUnknownParameterType, reportMissingTypeArgument]
         self.update_progress(40, "正在生成音频...")
         
         # Start AudioWorker
         self.audio_worker = AudioWorker(self.bw)
-        self.audio_worker.progress.connect(self._on_worker_progress)
-        self.audio_worker.finished.connect(self._on_audio_ready)
-        self.audio_worker.error.connect(self._on_worker_error)
+        self.audio_worker.progress.connect(self._on_worker_progress) # pyright: ignore[reportUnknownMemberType]
+        self.audio_worker.finished.connect(self._on_audio_ready) # pyright: ignore[reportUnknownMemberType]
+        self.audio_worker.error.connect(self._on_worker_error) # pyright: ignore[reportUnknownMemberType]
         self.audio_worker.start()
     
     def _on_audio_ready(self, audio_path: str) -> None:
@@ -250,10 +250,10 @@ class Player:
         
         # Start FrameWorker after audio is ready (needs audio_length_ms)
         self.frame_worker = FrameWorker(self.bw)
-        self.frame_worker.progress.connect(self._on_worker_progress)
-        self.frame_worker.frame_ready.connect(self._on_frame_ready)
-        self.frame_worker.finished.connect(self._on_frames_ready)
-        self.frame_worker.error.connect(self._on_worker_error)
+        self.frame_worker.progress.connect(self._on_worker_progress) # pyright: ignore[reportUnknownMemberType]
+        self.frame_worker.frame_ready.connect(self._on_frame_ready) # pyright: ignore[reportUnknownMemberType]
+        self.frame_worker.finished.connect(self._on_frames_ready) # pyright: ignore[reportUnknownMemberType]
+        self.frame_worker.error.connect(self._on_worker_error) # pyright: ignore[reportUnknownMemberType]
         self.frame_worker.start()
         
         self.set_image_timestamp(0)

@@ -108,6 +108,24 @@ def main():
         print("检测到 macOS。")
 
     os.chdir(base_dir)
+
+    # ---------- Build Rust accelerator if available ----------
+    rust_dir = os.path.join(base_dir, 'src', 'bw_accelerator')
+    if os.path.isdir(rust_dir):
+        print("检测到 Rust 加速模块，尝试编译...")
+        rust_cmd = ['cargo', 'build', '--release', '--manifest-path', os.path.join(rust_dir, 'Cargo.toml')]
+        try:
+            result = subprocess.run(rust_cmd, capture_output=True, text=True, timeout=300)
+            if result.returncode == 0:
+                print("Rust 加速模块编译成功！")
+                # Copy the DLL to the output directory will be handled by Nuitka include
+            else:
+                print(f"警告：Rust 编译失败，将使用 numpy 回退路径：\n{result.stderr}")
+        except FileNotFoundError:
+            print("警告：未找到 cargo 命令，Rust 加速模块将不可用。")
+        except subprocess.TimeoutExpired:
+            print("警告：Rust 编译超时，将使用 numpy 回退路径。")
+
     print("开始 Nuitka 编译...")
     print(f"命令：{' '.join(cmd)}")
 

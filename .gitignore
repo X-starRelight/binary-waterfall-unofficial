@@ -158,5 +158,11 @@ cython_debug/
 
 file_version_info.txt
 
+# Rust build artifacts
+src/bw_accelerator/target/
+
 # CMD
 *.cmd
+
+# dev
+docs_/

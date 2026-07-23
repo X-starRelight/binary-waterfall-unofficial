@@ -1,0 +1,17 @@
+[package]
+name = "bw_accelerator"
+version = "0.1.0"
+edition = "2021"
+
+[lib]
+name = "bw_accelerator"
+crate-type = ["cdylib"]
+
+[dependencies]
+memmap2 = "0.9"
+png = "0.17"
+
+[profile.release]
+opt-level = 3
+lto = true
+strip = true

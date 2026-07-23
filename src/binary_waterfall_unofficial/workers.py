@@ -4,7 +4,6 @@ import os
 import math
 import wave
 import shutil
-from typing import Any
 
 from PyQt6.QtCore import QThread, pyqtSignal, QMutex
 from PyQt6.QtGui import QImage
@@ -65,21 +64,21 @@ class FileWorker(QThread):
                 return
             
             from . import rust_bridge, ngen
-            _RUST_AVAILABLE = False
+            _RUST_AVAILABLE: bool = False
             try:
                 if rust_bridge.is_available():
                     rust_bridge.load_file(self.filename)
-                    self.bw._rust_loaded = True
-                    _RUST_AVAILABLE = True
+                    self.bw._rust_loaded = True # pyright: ignore[reportPrivateUsage]
+                    _RUST_AVAILABLE: bool = True # pyright: ignore[reportConstantRedefinition]
             except Exception:
                 pass
             
             if not _RUST_AVAILABLE:
                 try:
                     ngen.load_file(self.filename)
-                    self.bw._rust_loaded = True
+                    self.bw._rust_loaded = True # pyright: ignore[reportPrivateUsage]
                 except Exception:
-                    self.bw._rust_loaded = False
+                    self.bw._rust_loaded = False # pyright: ignore[reportPrivateUsage]
             
             # 6. Done
             self.progress.emit(100, "文件加载完成")
@@ -134,7 +133,8 @@ class AudioWorker(QThread):
                 
                 total = self.bw.total_bytes or 0
                 read = 0
-                for chunk in iter(lambda: self.bw.file.read(4096), b""):
+                assert self.bw.file is not None
+                for chunk in iter(lambda: self.bw.file.read(4096), b""): # pyright: ignore[reportOptionalMemberAccess]
                     if self._interrupted:
                         return
                     
@@ -159,12 +159,13 @@ class AudioWorker(QThread):
                 self.progress.emit(75, "调整音量...")
                 if self._interrupted:
                     return
-                import pydub
-                factor = self.bw.volume / 100
-                audio = pydub.AudioSegment.from_file(file=self.bw.audio_filename, format="wav")
-                audio += pydub.audio_segment.ratio_to_db(factor)
+                import pydub # pyright: ignore[reportMissingTypeStubs]
+                assert self.bw.volume is not None
+                factor: float = self.bw.volume / 100
+                audio = pydub.AudioSegment.from_file(file=self.bw.audio_filename, format="wav") # pyright: ignore[reportUnknownVariableType, reportUnknownMemberType]
+                audio += pydub.audio_segment.ratio_to_db(factor) # pyright: ignore[reportUnknownVariableType, reportUnknownMemberType]
                 temp_filename = self.bw.audio_filename + ".temp"
-                audio.export(temp_filename, format="wav")
+                audio.export(temp_filename, format="wav") # pyright: ignore[reportUnknownMemberType]
                 self.bw.delete_audio()
                 shutil.move(temp_filename, self.bw.audio_filename)
             
@@ -172,9 +173,9 @@ class AudioWorker(QThread):
             self.progress.emit(90, "计算音频时长...")
             if self._interrupted:
                 return
-            import pydub
-            audio_length = pydub.AudioSegment.from_file(self.bw.audio_filename).duration_seconds
-            self.bw.audio_length_ms = math.ceil(audio_length * 1000)
+            import pydub # pyright: ignore[reportMissingTypeStubs]
+            audio_length = pydub.AudioSegment.from_file(self.bw.audio_filename).duration_seconds # pyright: ignore[reportUnknownVariableType, reportUnknownMemberType]
+            self.bw.audio_length_ms = math.ceil(audio_length * 1000) # pyright: ignore[reportUnknownArgumentType, reportUnknownMemberType]
             
             # 5. Done
             self.progress.emit(100, "音频生成完成")

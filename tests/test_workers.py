@@ -3,13 +3,15 @@ import sys
 import time
 import pytest
 from PyQt6.QtCore import QCoreApplication
+from pathlib import Path
+from typing import Any
 
 # Ensure src is in path before importing
 if "src" not in sys.path:
     sys.path.insert(0, os.path.join(os.path.dirname(__file__), "..", "src"))
 
 from binary_waterfall_unofficial.workers import FileWorker, AudioWorker, FrameWorker
-from binary_waterfall_unofficial import generators
+import binary_waterfall_unofficial.generators as generators
 
 
 @pytest.fixture
@@ -22,7 +24,7 @@ def qapp_instance():
 
 
 class TestFileWorker:
-    def test_file_worker_starts_and_stops(self, qapp_instance, tmp_path):
+    def test_file_worker_starts_and_stops(self, qapp_instance: QCoreApplication, tmp_path: Path):
         """Test that FileWorker can start and stop without errors."""
         test_file = tmp_path / "test.bin"
         test_file.write_bytes(b"\x00" * 1024)
@@ -31,10 +33,10 @@ class TestFileWorker:
         worker = FileWorker(str(test_file), bw)
         
         # Connect signals to track them
-        finished = []
-        errors = []
-        worker.finished.connect(lambda info: finished.append(info))
-        worker.error.connect(lambda msg: errors.append(msg))
+        finished: list[dict[str, Any]] = []
+        errors: list[dict[str, Any]] = []
+        worker.finished.connect(lambda info: finished.append(info)) # pyright: ignore[reportUnknownArgumentType, reportUnknownLambdaType, reportUnknownMemberType]
+        worker.error.connect(lambda msg: errors.append(msg)) # pyright: ignore[reportUnknownArgumentType, reportUnknownLambdaType, reportUnknownMemberType]
         
         worker.start()
         # Give worker time to run
@@ -55,13 +57,13 @@ class TestFileWorker:
         
         bw.cleanup()
 
-    def test_file_worker_emits_error_for_missing_file(self, qapp_instance):
+    def test_file_worker_emits_error_for_missing_file(self, qapp_instance: QCoreApplication):
         """Test that FileWorker emits error for non-existent file."""
         bw = generators.BinaryWaterfall()
         worker = FileWorker("/nonexistent/file.bin", bw)
         
-        errors = []
-        worker.error.connect(lambda msg: errors.append(msg))
+        errors: list[dict[str, Any]] = []
+        worker.error.connect(lambda msg: errors.append(msg)) # pyright: ignore[reportUnknownArgumentType, reportUnknownLambdaType, reportUnknownMemberType]
         worker.start()
         
         # Wait for worker to finish
@@ -69,11 +71,11 @@ class TestFileWorker:
         qapp_instance.processEvents()
         
         assert len(errors) == 1
-        assert "not found" in errors[0].lower() or "不存在" in errors[0]
+        assert "not found" in errors[0].lower() or "不存在" in errors[0] # pyright: ignore[reportAttributeAccessIssue, reportUnknownMemberType]
         
         bw.cleanup()
 
-    def test_file_worker_can_be_interrupted(self, qapp_instance, tmp_path):
+    def test_file_worker_can_be_interrupted(self, qapp_instance: QCoreApplication, tmp_path: Path):
         """Test that FileWorker can be interrupted."""
         test_file = tmp_path / "large.bin"
         test_file.write_bytes(b"\x00" * (10 * 1024 * 1024))
@@ -90,12 +92,12 @@ class TestFileWorker:
 
 
 class TestAudioWorker:
-    def test_audio_worker_imports(self, qapp_instance):
+    def test_audio_worker_imports(self, qapp_instance: QCoreApplication):
         """Test that AudioWorker can be imported."""
         assert AudioWorker is not None
 
 
 class TestFrameWorker:
-    def test_frame_worker_imports(self, qapp_instance):
+    def test_frame_worker_imports(self, qapp_instance: QCoreApplication):
         """Test that FrameWorker can be imported."""
         assert FrameWorker is not None

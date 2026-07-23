@@ -242,19 +242,20 @@ class Player:
         self.audio_worker.finished.connect(self._on_audio_ready)
         self.audio_worker.error.connect(self._on_worker_error)
         self.audio_worker.start()
+    
+    def _on_audio_ready(self, audio_path: str) -> None:
+        self.set_audio_file(audio_path)
+        self.set_playbutton_if_given(play=True)
+        self.update_progress(90, "预渲染帧...")
         
-        # Start FrameWorker
+        # Start FrameWorker after audio is ready (needs audio_length_ms)
         self.frame_worker = FrameWorker(self.bw)
         self.frame_worker.progress.connect(self._on_worker_progress)
         self.frame_worker.frame_ready.connect(self._on_frame_ready)
         self.frame_worker.finished.connect(self._on_frames_ready)
         self.frame_worker.error.connect(self._on_worker_error)
         self.frame_worker.start()
-    
-    def _on_audio_ready(self, audio_path: str) -> None:
-        self.set_audio_file(audio_path)
-        self.set_playbutton_if_given(play=True)
-        self._hide_progress_bar()
+        
         self.set_image_timestamp(0)
     
     def _on_frame_ready(self, index: int, frame: QImage) -> None:
@@ -263,7 +264,7 @@ class Player:
     
     def _on_frames_ready(self) -> None:
         # All frames pre-rendered
-        pass
+        self._hide_progress_bar()
     
     def _on_worker_progress(self, percent: int, text: str) -> None:
         self.update_progress(percent, text)

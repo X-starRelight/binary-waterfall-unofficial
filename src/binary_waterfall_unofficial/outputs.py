@@ -283,15 +283,23 @@ class Player:
     
     def update_progress(self, percent: int, text: str) -> None:
         dialog = self.progress_dialog
-        if dialog is not None:
+        if dialog is None:
+            return
+        try:
             dialog.setValue(percent)
             dialog.setLabelText(text)
+        except (RuntimeError, AttributeError):
+            self.progress_dialog = None
     
     def _hide_progress_bar(self) -> None:
         dialog = self.progress_dialog
-        if dialog is not None:
-            self.progress_dialog = None
+        if dialog is None:
+            return
+        self.progress_dialog = None
+        try:
             dialog.close()
+        except (RuntimeError, AttributeError):
+            pass
 
     def close_file(self) -> None:
         # Interrupt all running workers

@@ -11,7 +11,6 @@ on:
 env:
   CARGO_TERM_COLOR: always
   RUST_BACKTRACE: 1
-  NUITKA_ASSUME_YES_FOR_DOWNLOADS: "yes"
 
 jobs:
   # ═══════════════════════════════════════════════════════════════
@@ -202,7 +201,7 @@ jobs:
 
       - name: 🏗️ 使用 Nuitka 打包
         shell: bash
-        run: uv run python build.py --lib-path=${{ matrix.artifact_lib_name }}
+        run: uv run python build.py --assume-yes-for-downloads --lib-path=${{ matrix.artifact_lib_name }}
 
       - name: 📦 压缩 Nuitka 产物为 zip
         shell: bash

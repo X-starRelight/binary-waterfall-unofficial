@@ -28,6 +28,8 @@ def parse_args():
     parser = argparse.ArgumentParser(description='Nuitka packaging script')
     parser.add_argument('--lib-path', type=str, default=None,
                         help='Path to the precompiled dynamic library, skip cargo build when passed in')
+    parser.add_argument('--assume-yes-for-downloads', action='store_true',
+                        help='Pass --assume-yes-for-downloads to Nuitka for CI usage')
     return parser.parse_args()
 
 
@@ -59,6 +61,9 @@ def main():
         '--follow-imports',
         '--output-dir=build',
     ]
+
+    if args.assume_yes_for_downloads:
+        cmd.append('--assume-yes-for-downloads')
 
     # ---------- General Data Catalog ----------
     data_dirs = [

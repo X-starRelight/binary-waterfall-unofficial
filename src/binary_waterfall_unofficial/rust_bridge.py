@@ -2,12 +2,41 @@
 
 from __future__ import annotations
 
+import platform
 import sys
 from pathlib import Path
 from typing import Any
 from collections.abc import Callable
 
 import numpy as np
+
+
+def _find_library() -> str:
+    system = sys.platform
+    machine = platform.machine().lower()
+    is_64bit = sys.maxsize > 2**32
+
+    is_arm = "arm" in machine or "aarch64" in machine
+
+    if system == "win32":
+        if is_arm:
+            return "bw_accelerator_arm64.dll"
+        elif not is_64bit:
+            return "bw_accelerator_x86.dll"
+        else:
+            return "bw_accelerator.dll"
+
+    elif system == "darwin":
+        if is_arm:
+            return "bw_accelerator_arm64.dylib"
+        else:
+            return "bw_accelerator.dylib"
+
+    else:
+        if is_arm:
+            return "bw_accelerator_arm64.so"
+        else:
+            return "bw_accelerator.so"
 
 # Try to load the Rust library
 RUST_AVAILABLE: bool = False
@@ -22,34 +51,26 @@ _export_video: Any = None
 _export_sequence: Any = None
 address_of: Callable[..., Any] | None = None
 
-try:
-    from senri_ffi import Library, types, address_of as _address_of, pointer  # type: ignore[reportUnknownMemberType]
+_lib_name = _find_library()
 
-    address_of = _address_of
+# Search paths
+search_paths = [
+    Path(__file__).parent / 'bw_accelerator' / _lib_name,
+    Path(__file__).parent / _lib_name,
+    Path(__file__).parent / 'lib' / _lib_name,
+]
 
-    # Determine library path
-    if sys.platform == 'win32':
-        lib_name = 'bw_accelerator.dll'
-    elif sys.platform == 'darwin':
-        lib_name = 'libbw_accelerator.dylib'
-    else:
-        lib_name = 'libbw_accelerator.so'
+lib_path = None
+for p in search_paths:
+    if p.exists():
+        lib_path = p
+        break
 
-    # Search paths: target/release first, then alongside this file
-    search_paths = [
-        # Path(__file__).parent.parent.parent / 'bw_accelerator' / 'target' / 'release' / lib_name,
-        Path(__file__).parent / 'bw_accelerator' / lib_name,
-        Path(__file__).parent / lib_name,
-        Path(__file__).parent / 'lib' / lib_name,
-    ]
+if lib_path is not None:
+    try:
+        from senri_ffi import Library, types, address_of as _address_of, pointer  # type: ignore[reportUnknownMemberType]
 
-    lib_path = None
-    for p in search_paths:
-        if p.exists():
-            lib_path = p
-            break
-
-    if lib_path is not None:
+        address_of = _address_of
         _lib = Library.load(str(lib_path))
 
         # Bind function signatures
@@ -79,9 +100,9 @@ try:
         ])
 
         RUST_AVAILABLE: bool = True # pyright: ignore[reportConstantRedefinition]
-except Exception:
-    RUST_AVAILABLE: bool = False # pyright: ignore[reportConstantRedefinition]
-    _lib = None
+    except Exception:
+        RUST_AVAILABLE: bool = False # pyright: ignore[reportConstantRedefinition]
+        _lib = None
 
 
 def is_available() -> bool:

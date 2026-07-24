@@ -2,6 +2,7 @@
 Nuitka 打包脚本
 """
 
+import argparse
 import os
 import shutil
 import sys
@@ -23,7 +24,15 @@ else:
     lib_suffix = 'so'
 
 
+def parse_args():
+    parser = argparse.ArgumentParser(description='Nuitka 打包脚本')
+    parser.add_argument('--lib-path', type=str, default=None,
+                        help='预编译的动态库路径，传入时跳过 cargo build')
+    return parser.parse_args()
+
+
 def main():
+    args = parse_args()
     base_dir = os.path.dirname(os.path.abspath(__file__))
     src_dir = os.path.join(base_dir, 'src', 'binary_waterfall_unofficial')
     resources_dir = os.path.join(src_dir, 'resources')
@@ -122,9 +131,27 @@ def main():
 
     os.chdir(base_dir)
 
-    # ---------- Build Rust accelerator if available ----------
+    # ---------- Rust accelerator ----------
     rust_dir = os.path.join(base_dir, 'src', 'bw_accelerator')
-    if os.path.isdir(rust_dir):
+    dst_dir = os.path.join(base_dir, 'src', 'binary_waterfall_unofficial', 'bw_accelerator')
+    os.makedirs(dst_dir, exist_ok=True)
+
+    if args.lib_path:
+        # 使用预编译的动态库
+        lib_path = os.path.abspath(args.lib_path)
+        if not os.path.isfile(lib_path):
+            print(f"错误：指定的动态库不存在: {lib_path}")
+            sys.exit(1)
+        print(f"使用预编译动态库: {lib_path}")
+        dst_lib = os.path.join(dst_dir, os.path.basename(lib_path))
+        shutil.copy2(lib_path, dst_lib)
+        import glob as glob_mod
+        dll_files = glob_mod.glob(os.path.join(dst_dir, f'*.{lib_suffix}'))
+        for dll in dll_files:
+            dll_name = os.path.basename(dll)
+            cmd.append(f'--include-data-files={dll}=bw_accelerator/{dll_name}')
+    elif os.path.isdir(rust_dir):
+        # 自动编译
         print("检测到 Rust 加速模块，尝试编译...")
         rust_cmd = ['cargo', 'build', '--release', '--manifest-path', os.path.join(rust_dir, 'Cargo.toml')]
         try:
@@ -132,11 +159,10 @@ def main():
             if result.returncode == 0:
                 print("Rust 加速模块编译成功！")
                 src_lib = os.path.join(rust_dir, 'target', 'release', lib_name)
-                dst_lib = os.path.join(base_dir, 'src', 'binary_waterfall_unofficial', 'bw_accelerator', lib_name)
-                os.makedirs(os.path.dirname(dst_lib), exist_ok=True)
+                dst_lib = os.path.join(dst_dir, lib_name)
                 shutil.copy2(src_lib, dst_lib)
                 import glob as glob_mod
-                dll_files = glob_mod.glob(os.path.join(base_dir, 'src', 'binary_waterfall_unofficial', 'bw_accelerator', f'*.{lib_suffix}'))
+                dll_files = glob_mod.glob(os.path.join(dst_dir, f'*.{lib_suffix}'))
                 for dll in dll_files:
                     dll_name = os.path.basename(dll)
                     cmd.append(f'--include-data-files={dll}=bw_accelerator/{dll_name}')

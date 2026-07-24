@@ -199,13 +199,7 @@ jobs:
           uv sync
           uv sync --group build
 
-      - name: 🏗️ 使用 Nuitka 打包 (自动编译 Rust)
-        if: "!matrix.cross"
-        shell: bash
-        run: uv run python build.py
-
-      - name: 🏗️ 使用 Nuitka 打包 (交叉编译，使用预编译库)
-        if: matrix.cross
+      - name: 🏗️ 使用 Nuitka 打包
         shell: bash
         run: uv run python build.py --lib-path=${{ matrix.artifact_lib_name }}
 

@@ -128,9 +128,11 @@ jobs:
 
       - name: 🏗️ 编译 Rust 动态库 (原生)
         if: "!matrix.cross"
+        working-directory: src/bw_accelerator
         run: cargo build --release --target ${{ matrix.target }}
 
       - name: 🏗️ 编译 Rust 动态库 (交叉编译)
+        working-directory: src/bw_accelerator
         if: matrix.cross
         run: cross build --release --target ${{ matrix.target }}
 

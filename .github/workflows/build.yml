@@ -26,29 +26,29 @@ jobs:
             target: x86_64-pc-windows-msvc
             lib_name: bw_accelerator.dll
             artifact_lib_name: bw_accelerator.dll
-            artifact_name: binary_waterfall_unofficial_windows_x64.zip
+            artifact_name: binary_waterfall_unofficial_windows_x64.7z
           - os: windows-latest
             target: i686-pc-windows-msvc
             lib_name: bw_accelerator.dll
             artifact_lib_name: bw_accelerator_x86.dll
-            artifact_name: binary_waterfall_unofficial_windows_x86.zip
+            artifact_name: binary_waterfall_unofficial_windows_x86.7z
           - os: windows-latest
             target: aarch64-pc-windows-msvc
             lib_name: bw_accelerator.dll
             artifact_lib_name: bw_accelerator_arm64.dll
-            artifact_name: binary_waterfall_unofficial_windows_arm64.zip
+            artifact_name: binary_waterfall_unofficial_windows_arm64.7z
 
           # ── Linux ──
           - os: ubuntu-latest
             target: x86_64-unknown-linux-gnu
             lib_name: libbw_accelerator.so
             artifact_lib_name: bw_accelerator.so
-            artifact_name: binary_waterfall_unofficial_linux_x64.zip
+            artifact_name: binary_waterfall_unofficial_linux_x64.7z
           - os: ubuntu-latest
             target: aarch64-unknown-linux-gnu
             lib_name: libbw_accelerator.so
             artifact_lib_name: bw_accelerator_arm64.so
-            artifact_name: binary_waterfall_unofficial_linux_arm64.zip
+            artifact_name: binary_waterfall_unofficial_linux_arm64.7z
             cross: true
 
           # ── macOS ──
@@ -56,12 +56,12 @@ jobs:
             target: x86_64-apple-darwin
             lib_name: libbw_accelerator.dylib
             artifact_lib_name: bw_accelerator.dylib
-            artifact_name: binary_waterfall_unofficial_macos_x64.zip
+            artifact_name: binary_waterfall_unofficial_macos_x64.7z
           - os: macos-latest
             target: aarch64-apple-darwin
             lib_name: libbw_accelerator.dylib
             artifact_lib_name: bw_accelerator_arm64.dylib
-            artifact_name: binary_waterfall_unofficial_macos_arm64.zip
+            artifact_name: binary_waterfall_unofficial_macos_arm64.7z
 
     runs-on: ${{ matrix.os }}
     name: ${{ matrix.artifact_name }} (${{ matrix.target }})
@@ -203,17 +203,9 @@ jobs:
         shell: bash
         run: uv run python build.py --assume-yes-for-downloads --lib-path=${{ matrix.artifact_lib_name }}
 
-      - name: 📦 压缩 Nuitka 产物为 zip
+      - name: 📦 压缩 Nuitka 产物为 7z
         shell: bash
-        run: |
-          DIST_DIR="build/binary_waterfall_unofficial.dist"
-          if [ -d "$DIST_DIR" ]; then
-            zip -r "${{ matrix.artifact_name }}" "$DIST_DIR"
-            echo "产物: ${{ matrix.artifact_name }} ($(du -h "${{ matrix.artifact_name }}" | cut -f1))"
-          else
-            echo "❌ Nuitka 产物目录不存在: $DIST_DIR"
-            exit 1
-          fi
+        run: 7z a -t7z -mx=9 "${{ matrix.artifact_name }}" build/binary_waterfall_unofficial.dist
 
       - name: 📤 上传产物
         uses: actions/upload-artifact@v4

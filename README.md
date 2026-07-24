@@ -39,7 +39,7 @@ https://github.com/X-starRelight/binary-waterfall-unofficial
 - Made file opening/loading asynchronous and faster
 - No longer published on ***pypi***, but released as a standalone application.
 - Cross-platform support
-- Fixed/modified/added/deleted some Issues from the original project
+- Fixed/Modified/Added/Deleted some Issues from the original project
   - [***#9***](https://github.com/nimaid/binary-waterfall/issues/9) - partially
   - [***#24***](https://github.com/nimaid/binary-waterfall/issues/24) - fully
   - [***#30***](https://github.com/nimaid/binary-waterfall/issues/30) & [***#39***](https://github.com/nimaid/binary-waterfall/issues/39) - fully

@@ -114,13 +114,13 @@ def main():
     if system == 'Windows':
         cmd.append(f'--windows-icon-from-ico={icon_ico}')
         # cmd.append('--windows-console-mode=disable')
-        print("检测到 Windows，已添加图标。")
+        print("Windows detected, icon added.")
     elif system == 'Linux':
         # cmd.append(f'--linux-icon={icon_png}')
-        print("检测到 Linux。")
+        print("Linux detected.")
     elif system == 'Darwin':
         # cmd.append(f'--macos-app-icon={icon_icns}')
-        print("检测到 macOS。")
+        print("macOS detected.")
 
     os.chdir(base_dir)
 

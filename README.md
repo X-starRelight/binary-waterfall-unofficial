@@ -26,25 +26,25 @@ https://github.com/X-starRelight/binary-waterfall-unofficial
 ### Modified Author
 - XstarRelight (xr).
 
-### Compared with the original version, what has been added/changed/removed?
+### Compared to the original version, what has been added/modified/removed?
 
-- Added multi-language (i18n) support
-- Switched the tech stack to PySide6 instead of PyQt5
-- Switched the compiler to Nuitka for building
-- Bumped the Python version to 3.13 or higher
-- Added the ***audioop-lts*** dependency so that certain legacy dependencies work with the new Python version
-- Added ***numpy*** to improve performance
-- Added Rust and ***senri-ffi*** for further performance optimization
+- Added multilingual (i18n) support
+- Switched the technology stack to ***PySide6*** instead of **PyQt5**.
+- Uses **Nuitka** for compilation.
+- Upgraded **Python** version to **3.13** and above
+- Added the ***audioop-lts*** dependency library so that some original dependent libraries can work with the new Python version
+- Added ***numpy*** to optimize performance
+- Added ***Rust*** and ***senri-ffi*** for further performance optimization
 - Added ***pytest*** for partial unit testing
 - Made file opening/loading asynchronous and faster
-- No longer published on PyPI; instead released as a standalone application
-- Cross‑platform support
-- Fixed/Modified/Added/Removed some issues from the original project:
-  - [#9](https://github.com/nimaid/binary-waterfall/issues/9) – partially
-  - [#24](https://github.com/nimaid/binary-waterfall/issues/24) – completely
-  - [#30](https://github.com/nimaid/binary-waterfall/issues/30) & [#39](https://github.com/nimaid/binary-waterfall/issues/39) – completely
-  - [#40](https://github.com/nimaid/binary-waterfall/issues/40) – completely
-  - [#41](https://github.com/nimaid/binary-waterfall/issues/41) – completely
+- No longer published on ***pypi***, but released as a standalone application.
+- Cross-platform support
+- Fixed/modified/added/deleted some Issues from the original project
+  - [***#9***](https://github.com/nimaid/binary-waterfall/issues/9) - partially
+  - [***#24***](https://github.com/nimaid/binary-waterfall/issues/24) - fully
+  - [***#30***](https://github.com/nimaid/binary-waterfall/issues/30) & [***#39***](https://github.com/nimaid/binary-waterfall/issues/39) - fully
+  - [***#40***](https://github.com/nimaid/binary-waterfall/issues/40) - fully
+  - [***#41***](https://github.com/nimaid/binary-waterfall/issues/41) - fully
 
 
 ### License
@@ -213,22 +213,23 @@ https://github.com/X-starRelight/binary-waterfall-unofficial
 ### 相比较原版，增加/修改/删除了什么？
 
 - 新增了多语言（i18n）支持
-- 切换了技术栈为 PySide6 ，而不是 PyQt5 。
-- 使用 Nuitka 进行编译。
-- 将 Python 版本提升为 3.13 以上
+- 切换了技术栈为 ***PySide6*** ，而不是 **PyQt5** 。
+- 使用 **Nuitka** 进行编译。
+- 将 **Python** 版本提升为 **3.13** 及以上
 - 增加 ***audioop-lts*** 依赖库使得一些原本的依赖库能在新的 Python 版本上使用
 - 增加 ***numpy*** 优化速度
-- 增加 Rust 和 ***senri-ffi*** 进一步优化速度
+- 增加 ***Rust*** 和 ***senri-ffi*** 进一步优化速度
 - 增加 ***pytest*** 进行部分单元测试
 - 使文件打开/加载变得异步和更快
-- 不再发布在 pypi 上，而是单独发布为软件。
+- 不再发布在 ***pypi*** 上，而是单独发布为软件。
 - 跨平台支持
 - 修复/修改/增加/删除源项目的部分 Issues
-  - [#9](https://github.com/nimaid/binary-waterfall/issues/9) - 部分
-  - [#24](https://github.com/nimaid/binary-waterfall/issues/24) - 全部
-  - [#30](https://github.com/nimaid/binary-waterfall/issues/30) & [#39](https://github.com/nimaid/binary-waterfall/issues/39) - 全部
-  - [#40](https://github.com/nimaid/binary-waterfall/issues/40) - 全部
-  - [#41](https://github.com/nimaid/binary-waterfall/issues/41) - 全部
+  - [***#9***](https://github.com/nimaid/binary-waterfall/issues/9) - 部分
+  - [***#24***](https://github.com/nimaid/binary-waterfall/issues/24) - 全部
+  - [***#30***](https://github.com/nimaid/binary-waterfall/issues/30) & [***#39***](https://github.com/nimaid/binary-waterfall/issues/39) - 全部
+  - [***#40***](https://github.com/nimaid/binary-waterfall/issues/40) - 全部
+  - [***#41***](https://github.com/nimaid/binary-waterfall/issues/41) - 全部
+
 
 ### 许可证
 本项目使用 GNU GPL v3.0 开源发布。

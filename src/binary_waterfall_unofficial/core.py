@@ -1,8 +1,8 @@
 import os
 import sys
-from PyQt6.QtCore import Qt
-from PyQt6.QtWidgets import QApplication
-from PyQt6.QtGui import QPalette, QColor
+from PySide6.QtCore import Qt
+from PySide6.QtWidgets import QApplication
+from PySide6.QtGui import QPalette, QColor
 
 from . import window, constants
 

@@ -7,7 +7,7 @@ from typing import IO, Any, Literal, cast
 import wave
 from PIL import Image, ImageOps
 import pydub # pyright: ignore[reportMissingTypeStubs]
-from PyQt6.QtGui import QImage
+from PySide6.QtGui import QImage
 
 from .constants.enums import ColorFmtCode, ColorModeCode
 from . import constants, helpers

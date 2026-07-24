@@ -2,7 +2,7 @@ import os
 import sys
 import time
 import pytest
-from PyQt6.QtCore import QCoreApplication
+from PySide6.QtCore import QCoreApplication
 from pathlib import Path
 from typing import Any
 

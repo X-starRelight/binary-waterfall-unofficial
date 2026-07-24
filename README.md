@@ -29,7 +29,7 @@ https://github.com/X-starRelight/binary-waterfall-unofficial
 ### Compared with the original version, what has been added/changed/removed?
 
 - Added multi-language (i18n) support
-- Switched the tech stack to PyQt6 instead of PyQt5
+- Switched the tech stack to PySide6 instead of PyQt5
 - Switched the compiler to Nuitka for building
 - Bumped the Python version to 3.13 or higher
 - Added the ***audioop-lts*** dependency so that certain legacy dependencies work with the new Python version
@@ -213,7 +213,7 @@ https://github.com/X-starRelight/binary-waterfall-unofficial
 ### 相比较原版，增加/修改/删除了什么？
 
 - 新增了多语言（i18n）支持
-- 切换了技术栈为 PyQt6 ，而不是 PyQt5 。
+- 切换了技术栈为 PySide6 ，而不是 PyQt5 。
 - 使用 Nuitka 进行编译。
 - 将 Python 版本提升为 3.13 以上
 - 增加 ***audioop-lts*** 依赖库使得一些原本的依赖库能在新的 Python 版本上使用

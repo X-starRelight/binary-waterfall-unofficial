@@ -5,8 +5,8 @@ import math
 import wave
 import shutil
 
-from PyQt6.QtCore import QThread, pyqtSignal, QMutex
-from PyQt6.QtGui import QImage
+from PySide6.QtCore import QThread, Signal, QMutex
+from PySide6.QtGui import QImage
 
 from . import generators, constants
 
@@ -14,9 +14,9 @@ from . import generators, constants
 class FileWorker(QThread):
     """Background worker for file opening and mmap loading."""
     
-    progress = pyqtSignal(int, str)  # (percentage, status text)
-    finished = pyqtSignal(dict)      # {filename, total_bytes, audio_filename}
-    error = pyqtSignal(str)
+    progress = Signal(int, str)  # (percentage, status text)
+    finished = Signal(dict)      # {filename, total_bytes, audio_filename}
+    error = Signal(str)
     
     def __init__(self, filename: str, bw: generators.BinaryWaterfall):
         super().__init__()
@@ -98,9 +98,9 @@ class FileWorker(QThread):
 class AudioWorker(QThread):
     """Background worker for WAV audio generation."""
     
-    progress = pyqtSignal(int, str)  # (percentage, status text)
-    finished = pyqtSignal(str)       # audio_filename
-    error = pyqtSignal(str)
+    progress = Signal(int, str)  # (percentage, status text)
+    finished = Signal(str)       # audio_filename
+    error = Signal(str)
     
     def __init__(self, bw: generators.BinaryWaterfall):
         super().__init__()
@@ -191,10 +191,10 @@ class AudioWorker(QThread):
 class FrameWorker(QThread):
     """Background worker for pre-rendering frames to cache."""
     
-    progress = pyqtSignal(int, str)       # (percentage, status text)
-    frame_ready = pyqtSignal(int, QImage) # (frame_index, frame_image)
-    finished = pyqtSignal()
-    error = pyqtSignal(str)
+    progress = Signal(int, str)       # (percentage, status text)
+    frame_ready = Signal(int, QImage) # (frame_index, frame_image)
+    finished = Signal()
+    error = Signal(str)
     
     def __init__(self, bw: generators.BinaryWaterfall, cache_size: int = 100):
         super().__init__()

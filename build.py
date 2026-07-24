@@ -55,25 +55,10 @@ def main():
         sys.executable, '-m', 'nuitka',
         main_script,
         '--standalone',
-        '--enable-plugin=pyqt6',
+        '--enable-plugin=pyside6',
         '--follow-imports',
         '--output-dir=build',
     ]
-
-    # ---------- Qt6 multimedia plugin dynamic library ----------
-    import PyQt6; 
-    qt_multimedia_plugins = os.path.join(
-        PyQt6.__path__[0], 'Qt6', 'plugins', 'multimedia'
-    )
-    qt_multimedia_plugins = os.path.normpath(qt_multimedia_plugins)
-    if os.path.isdir(qt_multimedia_plugins):
-        import glob as glob_mod
-        dll_files = glob_mod.glob(os.path.join(qt_multimedia_plugins, f'*.{lib_suffix}'))
-        for dll in dll_files:
-            dll_name = os.path.basename(dll)
-            cmd.append(f'--include-data-files={dll}=PyQt6/Qt6/plugins/multimedia/{dll_name}')
-    else:
-        print(f"Warning: Qt6 multimedia plugin directory {qt_multimedia_plugins} not found, preview playback may not work.")
 
     # ---------- General Data Catalog ----------
     data_dirs = [

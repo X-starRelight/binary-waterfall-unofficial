@@ -1,8 +1,8 @@
 from __future__ import annotations
 from collections.abc import Callable
-from PyQt6.QtCore import QEvent, QSize
-from PyQt6.QtWidgets import QAbstractButton, QSlider, QWidget, QStyle
-from PyQt6.QtGui import QEnterEvent, QMouseEvent, QPainter, QPaintEvent, QPixmap
+from PySide6.QtCore import QEvent, QSize
+from PySide6.QtWidgets import QAbstractButton, QSlider, QWidget, QStyle
+from PySide6.QtGui import QEnterEvent, QMouseEvent, QPainter, QPaintEvent, QPixmap
 
 
 # Custom image-based button

@@ -10,10 +10,10 @@ import tempfile
 import pydub # pyright: ignore[reportMissingTypeStubs]
 from moviepy import ImageSequenceClip, AudioFileClip # pyright: ignore[reportMissingTypeStubs]
 from PIL import Image
-from PyQt6.QtCore import QUrl, Qt
-from PyQt6.QtMultimedia import QMediaPlayer, QAudioOutput
-from PyQt6.QtGui import QImage, QPixmap
-from PyQt6.QtWidgets import QProgressDialog, QMessageBox
+from PySide6.QtCore import QUrl, Qt
+from PySide6.QtMultimedia import QMediaPlayer, QAudioOutput
+from PySide6.QtGui import QImage, QPixmap
+from PySide6.QtWidgets import QProgressDialog, QMessageBox
 
 from . import generators, helpers, constants
 from .lang import L

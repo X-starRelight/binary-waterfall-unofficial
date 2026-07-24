@@ -2,12 +2,12 @@ from __future__ import annotations
 
 from typing import Any
 
-from PyQt6.QtCore import Qt
-from PyQt6.QtWidgets import (
+from PySide6.QtCore import Qt
+from PySide6.QtWidgets import (
     QGridLayout, QLabel, QDialog, QDialogButtonBox, QComboBox, QLineEdit, QCheckBox, QSpinBox,
     QDoubleSpinBox, QMessageBox, QWidget
 )
-from PyQt6.QtGui import QPixmap, QIcon
+from PySide6.QtGui import QPixmap, QIcon
 
 from .constants.enums import AlignmentCode, AudioCodecCode, EncoderPresetCode, ImageFormatCode, VideoCodecCode
 from . import constants

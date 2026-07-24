@@ -2,12 +2,12 @@ import os
 import json
 import sys
 from typing import Any
-from PyQt6.QtCore import Qt, QTimer
-from PyQt6.QtWidgets import (
+from PySide6.QtCore import Qt, QTimer
+from PySide6.QtWidgets import (
     QMainWindow, QMenuBar, QMenu, QWidget, QGridLayout, QHBoxLayout, QLabel,
     QFileDialog, QMessageBox, QSlider, QProgressDialog
 )
-from PyQt6.QtGui import QPixmap, QIcon, QAction, QKeyEvent, QMouseEvent
+from PySide6.QtGui import QPixmap, QIcon, QAction, QKeyEvent, QMouseEvent
 
 from . import constants, generators, outputs, widgets, dialogs
 from .lang import L, get_manager
@@ -374,7 +374,7 @@ class MyQMainWindow(QMainWindow):
             items.append((code, name))
 
         # Show selection dialog
-        from PyQt6.QtWidgets import QInputDialog
+        from PySide6.QtWidgets import QInputDialog
         names = [f"{name} ({code})" for code, name in items]
         selected, ok = QInputDialog.getItem( # pyright: ignore[reportUnknownMemberType]
             self,
@@ -407,7 +407,7 @@ class MyQMainWindow(QMainWindow):
 
     def _set_fallback_language(self) -> None:
         """设置回退语言"""
-        from PyQt6.QtWidgets import QInputDialog
+        from PySide6.QtWidgets import QInputDialog
 
         available = get_manager().available_languages()
         builtin = get_manager().builtin_codes

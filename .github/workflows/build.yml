@@ -139,7 +139,7 @@ jobs:
       - name: 📋 重命名动态库产物
         shell: bash
         run: |
-          SRC="target/${{ matrix.target }}/release/${{ matrix.lib_name }}"
+          SRC="src/bw_accelerator/target/${{ matrix.target }}/release/${{ matrix.lib_name }}"
           DST="${{ matrix.artifact_lib_name }}"
           cp "$SRC" "$DST"
           echo "动态库产物: $DST ($(du -h "$DST" | cut -f1))"

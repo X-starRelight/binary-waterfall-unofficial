@@ -580,7 +580,7 @@ class BinaryWaterfall:
         )
         if self.flip_v or self.flip_h:
             # Flip vertically
-            qimg = qimg.mirrored(horizontal=self.flip_h, vertical=self.flip_v) # pyright: ignore[reportArgumentType]
+            qimg = qimg.mirrored(self.flip_h, self.flip_v) # pyright: ignore[reportArgumentType]
 
         return qimg
 

@@ -65,6 +65,21 @@ def main():
     if args.assume_yes_for_downloads:
         cmd.append('--assume-yes-for-downloads')
 
+    # ---------- Qt6 multimedia plugin dynamic library ----------
+    import PySide6
+    qt_multimedia_plugins = os.path.join(
+        PySide6.__path__[0], 'plugins', 'multimedia'
+    )
+    qt_multimedia_plugins = os.path.normpath(qt_multimedia_plugins)
+    if os.path.isdir(qt_multimedia_plugins):
+        import glob as glob_mod
+        dll_files = glob_mod.glob(os.path.join(qt_multimedia_plugins, f'*.{lib_suffix}'))
+        for dll in dll_files:
+            dll_name = os.path.basename(dll)
+            cmd.append(f'--include-data-files={dll}=PySide6/plugins/multimedia/{dll_name}')
+    else:
+        print(f"Warning: Qt6 multimedia plugin directory {qt_multimedia_plugins} not found, preview playback may not work.")
+
     # ---------- General Data Catalog ----------
     data_dirs = [
         ('langs', 'langs'),

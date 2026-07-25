@@ -91,7 +91,7 @@ requires-dist = [
     { name = "pyside6", specifier = "==6.11.0" },
     { name = "pytest", specifier = "==9.1.1" },
     { name = "pyyaml", specifier = "==6.0.3" },
-    { name = "senri-ffi", specifier = "==0.1.0" },
+    { name = "senri-ffi", specifier = "==0.2.1" },
 ]
 
 [package.metadata.requires-dev]
@@ -429,11 +429,11 @@ wheels = [
 
 [[package]]
 name = "senri-ffi"
-version = "0.1.0"
+version = "0.2.1"
 source = { registry = "https://pypi.org/simple" }
-sdist = { url = "https://files.pythonhosted.org/packages/6e/97/85c56e96dcfffb6ca35a705a44dbe77d7e65dc0d8d3b809d0c914d75455d/senri_ffi-0.1.0.tar.gz", hash = "sha256:f3bb6ea68f9d556e2887ee3cfd3ca84d22441a40da9b96a8a11b47992e0658d6", size = 33981, upload-time = "2026-07-11T11:31:40.259Z" }
+sdist = { url = "https://files.pythonhosted.org/packages/59/a1/3d01373c0d2d39a428a0a44c7f728ae0ac7e46ed5ddeb19875f40cc21943/senri_ffi-0.2.1.tar.gz", hash = "sha256:fb9a0e98aa488b63a4c2dd04332c75db6ee5e123ea621bcbb32495a1a306de99", size = 49858, upload-time = "2026-07-25T13:26:54.603Z" }
 wheels = [
-    { url = "https://files.pythonhosted.org/packages/81/7a/0643ed690879d5b54abd3b7ccf598e803b44485d3708cf32e74b5c4686a3/senri_ffi-0.1.0-py3-none-any.whl", hash = "sha256:89f05c3edca6a3aad83ed7ce3bed1974bb4c54c424d36632ae9a7cafb9a7ae07", size = 25143, upload-time = "2026-07-11T11:31:38.572Z" },
+    { url = "https://files.pythonhosted.org/packages/35/05/ca5b3f6a08f933a1bfa99ee8d3ba6f34bfc012991263bb5b6e518fde566e/senri_ffi-0.2.1-py3-none-any.whl", hash = "sha256:c47043c03f4d0c60ae6111b6eb22677be3baa46c87dcf30f137971e46cd53d6b", size = 25851, upload-time = "2026-07-25T13:26:53.18Z" },
 ]
 
 [[package]]
@@ -450,12 +450,12 @@ wheels = [
 
 [[package]]
 name = "tqdm"
-version = "4.69.0"
+version = "4.69.1"
 source = { registry = "https://pypi.org/simple" }
 dependencies = [
     { name = "colorama", marker = "sys_platform == 'win32'" },
 ]
-sdist = { url = "https://files.pythonhosted.org/packages/8c/69/40407dfc835517f058b603dbf37a6df094d8582b015a51eddc988febbcb7/tqdm-4.69.0.tar.gz", hash = "sha256:700c5e85dcd5f009dd6222588a29180a193a748247a5d855b4d67db93d79a53b", size = 792569, upload-time = "2026-07-17T18:09:06.2Z" }
+sdist = { url = "https://files.pythonhosted.org/packages/dd/84/da0e5038228fa34dfd77c5026b173ed035d2a3ba31f1077590c013de2bff/tqdm-4.69.1.tar.gz", hash = "sha256:2be21080a0ce17e902c2f1baeb6a74bf551b67bbdfa4bc0109fad471d0b4cb0d", size = 793046, upload-time = "2026-07-24T14:22:02.08Z" }
 wheels = [
-    { url = "https://files.pythonhosted.org/packages/fe/21/99a0cdaf54eb35e77623c41b5a2c9472ee4404bba687052791fe2aba6773/tqdm-4.69.0-py3-none-any.whl", hash = "sha256:9979978912be667a6ef21fd5d8abf54e324e63d82f7f43c360792ebc2bc4e622", size = 676680, upload-time = "2026-07-17T18:09:04.172Z" },
+    { url = "https://files.pythonhosted.org/packages/01/50/5817619a0fca56aff06383dbfde7ae017b3ca383915b3f1e4713164273cf/tqdm-4.69.1-py3-none-any.whl", hash = "sha256:0a654b96f7a2660cceb615b56f307ec2bef96c515409014a429a561981ab52b4", size = 675452, upload-time = "2026-07-24T14:22:00.048Z" },
 ]

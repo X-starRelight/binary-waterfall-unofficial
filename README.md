@@ -10,10 +10,13 @@
 <p align="center"><a href="./video/The sounds of Microsoft Paint.mp4">Inspired by this video.</a></p>
 
 ### Downloads
-Sorry. Not at the moment.
+
+Download the latest version from the [Releases page](https://github.com/X-starRelight/binary-waterfall-unofficial/releases).
 
 ### Attribution
+
 If you use this program to create videos or other projects, you must provide attribution. Whether your project is for profit or not, attribution is required. Please copy the following attribution statement in full in your video description, or include it in your project's references in another way:
+
 ```
 Project used:
 Modified version maintained by XstarRelight (xr):
@@ -194,10 +197,13 @@ The main window consists of three areas:
 <p align="center"><a href="./video/The sounds of Microsoft Paint.mp4">受此视频启发</a></p>
 
 ### 下载方式
-对不起，暂时没有。
+
+请从 [Releases 页面](https://github.com/X-starRelight/binary-waterfall-unofficial/releases) 下载最新版本。
 
 ### 署名
+
 如果你使用这个程序制作视频或其他项目，你必须提供署名。无论你的项目是否盈利，署名都是必须的。请在你的视频描述中完整复制以下署名声明，或者以其他方式将其包含在你项目的参考资料中：
+
 ```
 使用的项目:
 由 XstarRelight (xr) 维护的修改版本:

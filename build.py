@@ -76,7 +76,7 @@ def main():
         dll_files = glob_mod.glob(os.path.join(qt_multimedia_plugins, f'*.{lib_suffix}'))
         for dll in dll_files:
             dll_name = os.path.basename(dll)
-            cmd.append(f'--include-data-files={dll}=PySide6/plugins/multimedia/{dll_name}')
+            cmd.append(f'--include-data-files={dll}=PySide6/qt-plugins/multimedia/{dll_name}')
     else:
         print(f"Warning: Qt6 multimedia plugin directory {qt_multimedia_plugins} not found, preview playback may not work.")
 

@@ -113,7 +113,12 @@
     "is_custom": "（自訂）",
     "ffmpeg_not_found": "找不到 FFmpeg。請安裝 FFmpeg 並將其新增到 PATH。\n\n下載網址：https://ffmpeg.org/download.html",
     "audio_export_error": "音訊匯出失敗：\n{error}",
-    "file_is_very_small": "此檔案非常小（{size} 位元組）。產生的視訊可能內容很少或沒有內容。"
+    "file_is_very_small": "此檔案非常小（{size} 位元組）。產生的視訊可能內容很少或沒有內容。",
+    "cancel": "取消",
+    "export_progress_title": "正在匯出 {type}",
+    "export_close_confirm": "匯出正在進行中，確定關閉嗎？\n關閉將中止所有匯出。",
+    "file_not_found": "找不到檔案：{filename}",
+    "audio_duration_unknown": "音訊時長未知"
   },
   "audio": {
     "channels": "聲道：",
@@ -165,11 +170,34 @@
     "m_project_home": "本更新版本專案首頁：",
     "o_donate": "給原作者捐贈："
   },
-  "progress": {
+  "loading": {
     "opening_file": "正在開啟檔案……",
     "generating_audio": "正在產生音訊……",
     "pre_rendering_frames": "正在預渲染幀……",
     "splicing_final_video": "正在合成最終視訊檔案……（程式可能會停頓）",
     "wrapping_up": "差不多了……"
+  },
+  "export": {
+    "export_preparing": "準備中...",
+    "validating_file": "驗證檔案...",
+    "cleaning_data": "清理舊資料...",
+    "opening_file_worker": "開啟檔案...",
+    "preparing_audio": "準備音訊...",
+    "loading_mmap": "載入記憶體映射...",
+    "file_load_complete": "檔案載入完成",
+    "cleaning_old_audio": "清理舊音訊...",
+    "generating_audio_worker": "產生音訊...",
+    "generating_audio_progress": "產生音訊... {read}MB / {total}MB",
+    "adjusting_volume": "調整音量...",
+    "calculating_duration": "計算音訊時長...",
+    "audio_generation_complete": "音訊產生完成",
+    "pre_rendering_progress": "預渲染幀... {i}/{total}",
+    "frame_cache_complete": "幀快取完成",
+    "building_video": "(1/3) 正在建構視訊...",
+    "writing_audio": "(2/3) 正在寫入音訊...",
+    "done_writing_audio": "寫入音訊完成！",
+    "writing_video": "(3/3) 正在寫入視訊...",
+    "done_writing_video": "寫入視訊完成！",
+    "video_is_ready": "視訊準備好了！"
   }
 }

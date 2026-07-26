@@ -3,10 +3,10 @@ from __future__ import annotations
 import json
 import os
 import shutil
-from dataclasses import dataclass, fields
+from dataclasses import dataclass, field, fields # pyright: ignore[reportUnusedImport]
 from typing import Any
 
-from .constants import DATA_DIR
+from .constants import DATA_DIR # pyright: ignore[reportUnknownVariableType]
 
 
 _CUSTOM_LANGS_DIR: str = os.path.join(DATA_DIR, "custom_langs")
@@ -162,6 +162,11 @@ class DialogLang:
     ffmpeg_not_found: str
     audio_export_error: str
     file_is_very_small: str
+    cancel: str
+    export_progress_title: str
+    export_close_confirm: str
+    file_not_found: str
+    audio_duration_unknown: str
 
 
 @dataclass(frozen=True)
@@ -225,12 +230,37 @@ class AboutLang:
 
 
 @dataclass(frozen=True)
-class ProgressLang:
+class LoadingLang:
     opening_file: str
     generating_audio: str
     pre_rendering_frames: str
     splicing_final_video: str
     wrapping_up: str
+
+
+@dataclass(frozen=True)
+class ExportLang:
+    export_preparing: str
+    validating_file: str
+    cleaning_data: str
+    opening_file_worker: str
+    preparing_audio: str
+    loading_mmap: str
+    file_load_complete: str
+    cleaning_old_audio: str
+    generating_audio_worker: str
+    generating_audio_progress: str
+    adjusting_volume: str
+    calculating_duration: str
+    audio_generation_complete: str
+    pre_rendering_progress: str
+    frame_cache_complete: str
+    building_video: str
+    writing_audio: str
+    done_writing_audio: str
+    writing_video: str
+    done_writing_video: str
+    video_is_ready: str
 
 
 @dataclass(frozen=True)
@@ -247,7 +277,8 @@ class Lang:
     player: PlayerLang
     hotkeys: HotkeysLang
     about: AboutLang
-    progress: ProgressLang
+    loading: LoadingLang
+    export: ExportLang
 
 # ==================== dataclass 构建辅助 ====================
 
@@ -272,7 +303,8 @@ def _build_lang(data: dict[str, Any]) -> Lang:
         player=_build_from_dict(PlayerLang, data.get("player", {})),
         hotkeys=_build_from_dict(HotkeysLang, data.get("hotkeys", {})),
         about=_build_from_dict(AboutLang, data.get("about", {})),
-        progress=_build_from_dict(ProgressLang, data.get("progress", {})),
+        loading=_build_from_dict(LoadingLang, data.get("loading", {})),
+        export=_build_from_dict(ExportLang, data.get("export", {})),
     )
 
 
@@ -288,16 +320,23 @@ class LangManager:
     def __init__(self) -> None:
         self._builtin: dict[str, dict[str, Any]] = {}
         self._custom: dict[str, dict[str, Any]] = {}
+        self._hardcoded: dict[str, dict[str, Any]] = {}
         self._state = _LangState()
         self._lang: Lang | None = None
 
     def init(self) -> None:
-        """初始化：加载内置语言、用户语言、设置"""
+        """初始化：加载内置语言、用户语言、硬编码兜底、设置"""
         os.makedirs(_CUSTOM_LANGS_DIR, exist_ok=True)
+        self._load_hardcoded()
         self._load_builtin()
         self._load_custom()
         self._load_settings()
         self._rebuild()
+
+    def _load_hardcoded(self) -> None:
+        """加载硬编码的英文兜底（en_us.py），不会被用户篡改"""
+        from . import en_us
+        self._hardcoded["en_us"] = dict(en_us.en_us)
 
     def _load_builtin(self) -> None:
         for fname in os.listdir(_BUILTIN_LANGS_DIR):
@@ -335,18 +374,21 @@ class LangManager:
             }, f, indent=2, ensure_ascii=False)
 
     def _rebuild(self) -> None:
-        """根据当前语言和回退语言重建 Lang dataclass"""
+        """三级合并：en_us.py → fallback.json → current.json"""
+        hardcoded_data: dict[str, Any] = self._hardcoded.get("en_us", {})
         fallback_data: dict[str, Any] = self._get_lang_data(self._state.fallback)
         current_data: dict[str, Any] = self._get_lang_data(self._state.current)
-        merged: dict[str, Any] = _merge_lang(current_data, fallback_data)
+        merged: dict[str, Any] = _merge_lang(current_data, _merge_lang(fallback_data, hardcoded_data))
         self._lang = _build_lang(merged)
 
     def _get_lang_data(self, code: str) -> dict[str, Any]:
-        """获取语言数据，优先自定义，再内置"""
+        """获取语言数据：自定义 → 内置 → 硬编码兜底"""
         if code in self._custom:
             return self._custom[code]
         if code in self._builtin:
             return self._builtin[code]
+        if code in self._hardcoded:
+            return self._hardcoded[code]
         return {}
 
     def available_languages(self) -> dict[str, str]:

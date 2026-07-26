@@ -1,5 +1,6 @@
 import os
 import sys
+import multiprocessing
 from PySide6.QtCore import Qt
 from PySide6.QtWidgets import QApplication
 from PySide6.QtGui import QPalette, QColor
@@ -42,6 +43,8 @@ def _setup_app(app: QApplication) -> None:
 
 
 def main(args: list[str]):
+    multiprocessing.freeze_support()
+
     if constants.HAS_SPLASH:
         import pyi_splash # pyright: ignore[reportMissingModuleSource]
         pyi_splash.close()

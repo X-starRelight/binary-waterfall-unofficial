@@ -1,4 +1,4 @@
-{
+en_us: dict[str, dict[str, str]] = {
   "_meta": {
     "name": "English"
   },

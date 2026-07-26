@@ -113,7 +113,12 @@
     "is_custom": "（自定义）",
     "ffmpeg_not_found": "未找到 FFmpeg。请安装 FFmpeg 并将其添加到 PATH。\n\n下载地址：https://ffmpeg.org/download.html",
     "audio_export_error": "音频导出失败：\n{error}",
-    "file_is_very_small": "此文件非常小（{size} 字节）。生成的视频可能内容很少或没有内容。"
+    "file_is_very_small": "此文件非常小（{size} 字节）。生成的视频可能内容很少或没有内容。",
+    "cancel": "取消",
+    "export_progress_title": "导出{type}",
+    "export_close_confirm": "有导出任务正在执行，是否关闭？\n关闭将中止所有导出。",
+    "file_not_found": "文件不存在: {filename}",
+    "audio_duration_unknown": "音频时长未知"
   },
   "audio": {
     "channels": "声道：",
@@ -165,11 +170,34 @@
     "m_project_home": "本更新版本项目主页：",
     "o_donate": "给原作者捐赠："
   },
-  "progress": {
+  "loading": {
     "opening_file": "正在打开文件……",
     "generating_audio": "正在生成音频……",
     "pre_rendering_frames": "正在预渲染帧……",
     "splicing_final_video": "正在合成最终视频文件……（程序可能会卡顿）",
     "wrapping_up": "差不多了……"
+  },
+  "export": {
+    "export_preparing": "准备中...",
+    "validating_file": "验证文件...",
+    "cleaning_data": "清理旧数据...",
+    "opening_file_worker": "打开文件...",
+    "preparing_audio": "准备音频...",
+    "loading_mmap": "加载内存映射...",
+    "file_load_complete": "文件加载完成",
+    "cleaning_old_audio": "清理旧音频...",
+    "generating_audio_worker": "生成音频...",
+    "generating_audio_progress": "生成音频... {read}MB / {total}MB",
+    "adjusting_volume": "调整音量...",
+    "calculating_duration": "计算音频时长...",
+    "audio_generation_complete": "音频生成完成",
+    "pre_rendering_progress": "预渲染帧... {i}/{total}",
+    "frame_cache_complete": "帧缓存完成",
+    "building_video": "(1/3) 正在构建视频……",
+    "writing_audio": "(2/3) 正在写入音频……",
+    "done_writing_audio": "写入音频完成！",
+    "writing_video": "(3/3) 正在写入视频……",
+    "done_writing_video": "写入视频完成！",
+    "video_is_ready": "视频准备好了！"
   }
 }

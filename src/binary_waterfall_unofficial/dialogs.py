@@ -28,7 +28,7 @@ class AudioSettings(QDialog):
         super().__init__(parent=parent)
         
         self.setWindowTitle(L.dialog.audio_settings)
-        self.setWindowIcon(QIcon(constants.ICON_PATHS["program"]))
+        self.setWindowIcon(QIcon(constants.ICON_PATHS["program"])) # pyright: ignore[reportArgumentType, reportCallIssue]
 
         # Hide "?" button
         self.setWindowFlags(self.windowFlags() ^ Qt.WindowType.WindowContextHelpButtonHint)
@@ -179,7 +179,7 @@ class VideoSettings(QDialog):
         super().__init__(parent=parent)
         
         self.setWindowTitle(L.dialog.video_settings)
-        self.setWindowIcon(QIcon(constants.ICON_PATHS["program"]))
+        self.setWindowIcon(QIcon(constants.ICON_PATHS["program"])) # pyright: ignore[reportArgumentType, reportCallIssue]
 
         # Hide "?" button
         self.setWindowFlags(self.windowFlags() ^ Qt.WindowType.WindowContextHelpButtonHint)
@@ -360,7 +360,7 @@ class PlayerSettings(QDialog):
         super().__init__(parent=parent)
         
         self.setWindowTitle(L.dialog.player_settings)
-        self.setWindowIcon(QIcon(constants.ICON_PATHS["program"]))
+        self.setWindowIcon(QIcon(constants.ICON_PATHS["program"])) # pyright: ignore[reportArgumentType, reportCallIssue]
 
         # Hide "?" button
         self.setWindowFlags(self.windowFlags() ^ Qt.WindowType.WindowContextHelpButtonHint)
@@ -433,7 +433,7 @@ class ExportFrame(QDialog):
                  ) -> None:
         super().__init__(parent=parent)
         self.setWindowTitle(L.dialog.export_image)
-        self.setWindowIcon(QIcon(constants.ICON_PATHS["program"]))
+        self.setWindowIcon(QIcon(constants.ICON_PATHS["program"])) # pyright: ignore[reportArgumentType, reportCallIssue]
 
         # Hide "?" button
         self.setWindowFlags(self.windowFlags() ^ Qt.WindowType.WindowContextHelpButtonHint)
@@ -523,7 +523,7 @@ class ExportSequence(QDialog):
                  ) -> None:
         super().__init__(parent=parent)
         self.setWindowTitle(L.dialog.export_sequence)
-        self.setWindowIcon(QIcon(constants.ICON_PATHS["program"]))
+        self.setWindowIcon(QIcon(constants.ICON_PATHS["program"])) # pyright: ignore[reportArgumentType, reportCallIssue]
 
         # Hide "?" button
         self.setWindowFlags(self.windowFlags() ^ Qt.WindowType.WindowContextHelpButtonHint)
@@ -656,7 +656,7 @@ class ExportVideo(QDialog):
                  ) -> None:
         super().__init__(parent=parent)
         self.setWindowTitle(L.dialog.export_video)
-        self.setWindowIcon(QIcon(constants.ICON_PATHS["program"]))
+        self.setWindowIcon(QIcon(constants.ICON_PATHS["program"])) # pyright: ignore[reportArgumentType, reportCallIssue]
 
         # Hide "?" button
         self.setWindowFlags(self.windowFlags() ^ Qt.WindowType.WindowContextHelpButtonHint)
@@ -762,7 +762,7 @@ class VideoEncoderSettings(QDialog):
                  parent: QWidget | None = None) -> None:
         super().__init__(parent=parent)
         self.setWindowTitle(L.dialog.encoder_settings)
-        self.setWindowIcon(QIcon(constants.ICON_PATHS["program"]))
+        self.setWindowIcon(QIcon(constants.ICON_PATHS["program"])) # pyright: ignore[reportArgumentType, reportCallIssue]
 
         # Hide "?" button
         self.setWindowFlags(self.windowFlags() ^ Qt.WindowType.WindowContextHelpButtonHint)
@@ -957,7 +957,7 @@ class HotkeysInfo(QDialog):
         super().__init__(parent=parent)
         
         self.setWindowTitle(L.dialog.hotkey_info)
-        self.setWindowIcon(QIcon(constants.ICON_PATHS["program"]))
+        self.setWindowIcon(QIcon(constants.ICON_PATHS["program"])) # pyright: ignore[reportArgumentType, reportCallIssue]
 
         # Hide "?" button
         self.setWindowFlags(self.windowFlags() ^ Qt.WindowType.WindowContextHelpButtonHint)
@@ -1056,7 +1056,7 @@ class About(QDialog):
         super().__init__(parent=parent)
         
         self.setWindowTitle(f"{L.menu_help.about} {constants.TITLE}")
-        self.setWindowIcon(QIcon(constants.ICON_PATHS["program"]))
+        self.setWindowIcon(QIcon(constants.ICON_PATHS["program"])) # pyright: ignore[reportArgumentType, reportCallIssue]
 
         # Hide "?" button
         self.setWindowFlags(self.windowFlags() ^ Qt.WindowType.WindowContextHelpButtonHint)

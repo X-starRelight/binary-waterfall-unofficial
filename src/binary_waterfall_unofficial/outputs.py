@@ -214,7 +214,7 @@ class Player:
         if filename is None:
             url = QUrl("")
         else:
-            url = QUrl.fromLocalFile(self.bw.audio_filename)
+            url = QUrl.fromLocalFile(self.bw.audio_filename) # pyright: ignore[reportArgumentType]
         self.audio.setSource(url)
 
     def open_file(self, filename: str | None) -> None:
@@ -224,17 +224,17 @@ class Player:
             return
         
         # Show progress bar
-        self._show_progress_bar(L.progress.opening_file)
+        self._show_progress_bar(L.loading.opening_file)
         
         # Start FileWorker
         self.file_worker = FileWorker(filename, self.bw)
         self.file_worker.progress.connect(self._on_worker_progress) # pyright: ignore[reportUnknownMemberType]
-        self.file_worker.finished.connect(self._on_file_ready) # pyright: ignore[reportUnknownMemberType]
+        self.file_worker.finished.connect(self._on_file_ready) # pyright: ignore[reportUnknownArgumentType, reportUnknownMemberType]
         self.file_worker.error.connect(self._on_worker_error) # pyright: ignore[reportUnknownMemberType]
         self.file_worker.start()
     
     def _on_file_ready(self, info: dict) -> None: # pyright: ignore[reportUnknownParameterType, reportMissingTypeArgument]
-        self.update_progress(40, L.progress.generating_audio)
+        self.update_progress(40, L.loading.generating_audio)
         
         # Start AudioWorker
         self.audio_worker = AudioWorker(self.bw)
@@ -246,7 +246,7 @@ class Player:
     def _on_audio_ready(self, audio_path: str) -> None:
         self.set_audio_file(audio_path)
         self.set_playbutton_if_given(play=True)
-        self.update_progress(90, L.progress.pre_rendering_frames)
+        self.update_progress(90, L.loading.pre_rendering_frames)
         
         # Start FrameWorker after audio is ready (needs audio_length_ms)
         self.frame_worker = FrameWorker(self.bw)
@@ -274,8 +274,8 @@ class Player:
         QMessageBox.critical(None, L.dialog.error, error)
     
     def _show_progress_bar(self, text: str) -> None:
-        self.progress_dialog = QProgressDialog(text, None, 0, 100)
-        self.progress_dialog.setWindowTitle(L.progress.opening_file)
+        self.progress_dialog = QProgressDialog(text, None, 0, 100) # pyright: ignore[reportArgumentType]
+        self.progress_dialog.setWindowTitle(L.loading.opening_file)
         self.progress_dialog.setWindowModality(Qt.WindowModality.WindowModal)
         self.progress_dialog.setMinimumDuration(0)
         self.progress_dialog.setValue(0)
@@ -544,7 +544,7 @@ class Renderer:
             if progress_dialog.wasCanceled():
                 shutil.rmtree(temp_dir)
                 return
-            progress_dialog.setLabelText(L.progress.splicing_final_video)
+            progress_dialog.setLabelText(L.loading.splicing_final_video)
 
         # Export audio
         self.export_audio(audio_file)
@@ -585,7 +585,7 @@ class Renderer:
                 return
 
             # Reset progress dialog and set to exit on completion
-            progress_dialog.setLabelText(L.progress.wrapping_up)
+            progress_dialog.setLabelText(L.loading.wrapping_up)
             progress_dialog.setValue(0)
             progress_dialog.setMaximum(100)
             progress_dialog.setAutoReset(True)

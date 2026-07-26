@@ -5,11 +5,12 @@ from typing import Any
 from PySide6.QtCore import Qt, QTimer
 from PySide6.QtWidgets import (
     QMainWindow, QMenuBar, QMenu, QWidget, QGridLayout, QHBoxLayout, QLabel,
-    QFileDialog, QMessageBox, QSlider, QProgressDialog
+    QFileDialog, QMessageBox, QSlider
 )
-from PySide6.QtGui import QPixmap, QIcon, QAction, QKeyEvent, QMouseEvent
+from PySide6.QtGui import QPixmap, QIcon, QAction, QKeyEvent, QMouseEvent, QCloseEvent
 
 from . import constants, generators, outputs, widgets, dialogs
+from .export_manager import ExportManager
 from .lang import L, get_manager
 
 
@@ -38,7 +39,7 @@ class MyQMainWindow(QMainWindow):
 
         
         self.setWindowTitle(L.menu.title)
-        self.setWindowIcon(QIcon(constants.ICON_PATHS["program"]))
+        self.setWindowIcon(QIcon(constants.ICON_PATHS["program"])) # pyright: ignore[reportCallIssue, reportArgumentType]
 
         self.bw = generators.BinaryWaterfall()
 
@@ -48,6 +49,9 @@ class MyQMainWindow(QMainWindow):
         self.renderer = outputs.Renderer(
             binary_waterfall=self.bw
         )
+
+        self.export_manager = ExportManager(self)
+        self.export_manager.task_done.connect(self._on_export_done)
 
         self.padding_px = 10
 
@@ -204,8 +208,6 @@ class MyQMainWindow(QMainWindow):
             bg=constants.COLORS["status_background"]
         ))
 
-        
-
         self.file_menu: QMenu = self.main_menu.addMenu(L.menu.file) # pyright: ignore[reportAttributeAccessIssue]
 
         self.file_menu_open = QAction(L.menu_file.open, self)
@@ -275,6 +277,29 @@ class MyQMainWindow(QMainWindow):
         # Set window to content size
         self.resize_window()
 
+
+    def _get_bw_params(self) -> dict[str, Any]:
+        """将当前 BinaryWaterfall 状态序列化，用于子进程重建。"""
+        return {
+            "filename": self.bw.filename,
+            "width": self.bw.width,
+            "height": self.bw.height,
+            "color_format_string": self.bw.get_color_format_string(),
+            "num_channels": self.bw.num_channels,
+            "sample_bytes": self.bw.sample_bytes,
+            "sample_rate": self.bw.sample_rate,
+            "volume": self.bw.volume,
+            "endianness": self.bw.endianness,
+            "flip_v": self.bw.flip_v,
+            "flip_h": self.bw.flip_h,
+            "alignment": self.bw.alignment,
+            "playhead_visible": self.bw.playhead_visible,
+        }
+
+    def _on_export_done(self, task_id: int, exit_code: int) -> None:
+        """导出子进程完成时调用。"""
+        pass
+
     def _build_language_menu(self) -> None:
         """构建语言子菜单"""
         self.language_menu.clear()
@@ -289,7 +314,7 @@ class MyQMainWindow(QMainWindow):
             action = QAction(display_name, self)
             action.setCheckable(True)
             action.setChecked(code == current)
-            action.triggered.connect(lambda checked, c=code: self._switch_language(c)) # pyright: ignore[reportUnknownLambdaType, reportUnknownMemberType]
+            action.triggered.connect(lambda checked, c=code: self._switch_language(c)) # pyright: ignore[reportUnknownArgumentType, reportUnknownLambdaType, reportUnknownMemberType]
             self.language_menu.addAction(action) # pyright: ignore[reportUnknownMemberType]
 
         self.language_menu.addSeparator() # pyright: ignore[reportUnknownMemberType]
@@ -883,7 +908,6 @@ class MyQMainWindow(QMainWindow):
             QTimer.singleShot(10, self.resize_window) # pyright: ignore[reportUnknownMemberType]
 
     def export_image_clicked(self) -> None:
-        
         if self.bw.audio_filename is None:
             QMessageBox.critical(
                 self,
@@ -916,30 +940,18 @@ class MyQMainWindow(QMainWindow):
             if filename != "":
                 _file_path, _file_title = os.path.split(filename)
                 self.last_save_location = _file_path
-                try:
-                    self.renderer.export_frame(
-                        ms=self.player.get_position(),
-                        filename=filename,
-                        size=(settings["width"], settings["height"]),
-                        keep_aspect=settings["keep_aspect"] # pyright: ignore[reportArgumentType]
-                    )
-                except Exception as e:
-                    QMessageBox.critical(
-                        self,
-                        L.dialog.export_error,
-                        L.dialog.export_error_frame.format(error=str(e)),
-                        QMessageBox.StandardButton.Ok
-                    )
-                else:
-                    QMessageBox.information(
-                        self,
-                        L.dialog.export_complete,
-                        L.dialog.export_complete_frame,
-                        QMessageBox.StandardButton.Ok
-                    )
+                self.export_manager.start_export(
+                    "frame",
+                    bw_params=self._get_bw_params(),
+                    export_params={
+                        "ms": self.player.get_position(),
+                        "filename": filename,
+                        "size": (settings["width"], settings["height"]),
+                        "keep_aspect": settings["keep_aspect"],
+                    },
+                )
 
     def export_audio_clicked(self) -> None:
-        
         if self.bw.audio_filename is None:
             QMessageBox.critical(
                 self,
@@ -963,27 +975,15 @@ class MyQMainWindow(QMainWindow):
         if filename != "":
             _file_path, _file_title = os.path.split(filename)
             self.last_save_location = _file_path
-            try:
-                self.renderer.export_audio(
-                    filename=filename
-                )
-            except Exception as e:
-                QMessageBox.critical(
-                    self,
-                    L.dialog.export_error,
-                    L.dialog.export_error_audio.format(error=str(e)),
-                    QMessageBox.StandardButton.Ok
-                )
-            else:
-                QMessageBox.information(
-                    self,
-                    L.dialog.export_complete,
-                    L.dialog.export_complete_audio,
-                    QMessageBox.StandardButton.Ok
-                )
+            self.export_manager.start_export(
+                "audio",
+                bw_params=self._get_bw_params(),
+                export_params={
+                    "filename": filename,
+                },
+            )
 
     def export_sequence_clicked(self) -> None:
-        
         if self.bw.audio_filename is None:
             QMessageBox.critical(
                 self,
@@ -1013,51 +1013,19 @@ class MyQMainWindow(QMainWindow):
             if file_dir != "":
                 _file_dir_parent, _file_dir_title = os.path.split(file_dir)
                 self.last_save_location = _file_dir_parent
-                frame_count = self.renderer.get_frame_count(
-                    fps=settings["fps"] # pyright: ignore[reportArgumentType]
+                self.export_manager.start_export(
+                    "sequence",
+                    bw_params=self._get_bw_params(),
+                    export_params={
+                        "directory": file_dir,
+                        "fps": settings["fps"],
+                        "size": (settings["width"], settings["height"]),
+                        "keep_aspect": settings["keep_aspect"],
+                        "image_format": settings["format"],
+                    },
                 )
-                progress_popup = QProgressDialog(L.dialog.exporting_image_sequence, L.dialog.export_aborted, 0, frame_count, self)
-                progress_popup.setWindowModality(Qt.WindowModality.WindowModal)
-                progress_popup.setWindowFlags(self.windowFlags() ^ Qt.WindowType.WindowContextHelpButtonHint)
-                progress_popup.setWindowTitle(L.dialog.exporting_images)
-                progress_popup.setFixedSize(300, 100)
-
-                try:
-                    self.renderer.export_sequence(
-                        directory=file_dir,
-                        size=(settings["width"], settings["height"]), # pyright: ignore[reportArgumentType]
-                        fps=settings["fps"], # pyright: ignore[reportArgumentType]
-                        keep_aspect=settings["keep_aspect"], # pyright: ignore[reportArgumentType]
-                        image_format=settings["format"], # pyright: ignore[reportArgumentType]
-                        progress_dialog=progress_popup
-                    )
-                except Exception as e:
-                    progress_popup.cancel()
-                    QMessageBox.critical(
-                        self,
-                        L.dialog.export_error,
-                        L.dialog.export_error_sequence.format(error=str(e)),
-                        QMessageBox.StandardButton.Ok
-                    )
-                else:
-                    if progress_popup.wasCanceled():
-                        # shutil.rmtree(file_dir) # Dangerous! May delete user data
-                        QMessageBox.warning(
-                            self,
-                            L.dialog.export_aborted,
-                            L.dialog.export_aborted_sequence,
-                            QMessageBox.StandardButton.Ok
-                        )
-                    else:
-                        QMessageBox.information(
-                            self,
-                            L.dialog.export_complete,
-                            L.dialog.export_complete_sequence,
-                            QMessageBox.StandardButton.Ok
-                        )
 
     def export_video_clicked(self) -> None:
-
         if self.bw.audio_filename is None:
             QMessageBox.critical(
                 self,
@@ -1105,51 +1073,40 @@ class MyQMainWindow(QMainWindow):
                 if encoder_result:
                     encoder_settings = encoder_popup.get_settings()
 
-                    frame_count = self.renderer.get_frame_count(
-                        fps=settings["fps"]
+                    self.export_manager.start_export(
+                        "video",
+                        bw_params=self._get_bw_params(),
+                        export_params={
+                            "filename": filename,
+                            "fps": settings["fps"],
+                            "size": (settings["width"], settings["height"]),
+                            "keep_aspect": settings["keep_aspect"],
+                            "codec": encoder_settings["codec"].value,
+                            "audio_codec": encoder_settings["audio_codec"].value,
+                            "bitrate": None,
+                            "audio_bitrate": None,
+                            "preset": encoder_settings["preset"].value,
+                        },
                     )
-                    progress_popup = QProgressDialog(L.dialog.rendering_frames, L.dialog.export_aborted, 0, frame_count, self)
-                    progress_popup.setWindowModality(Qt.WindowModality.WindowModal)
-                    progress_popup.setWindowFlags(self.windowFlags() ^ Qt.WindowType.WindowContextHelpButtonHint)
-                    progress_popup.setWindowTitle(L.dialog.exporting_video)
-                    progress_popup.setFixedSize(300, 100)
 
-                    try:
-                        self.renderer.export_video(
-                            filename=filename,
-                            size=(settings["width"], settings["height"]), # pyright: ignore[reportArgumentType]
-                            fps=settings["fps"],
-                            keep_aspect=settings["keep_aspect"], # pyright: ignore[reportArgumentType]
-                            progress_dialog=progress_popup,
-                            codec=encoder_settings["codec"].value,
-                            audio_codec=encoder_settings["audio_codec"].value,
-                            bitrate=None,
-                            audio_bitrate=None,
-                            preset=encoder_settings["preset"].value
-                        )
-                    except Exception as e:
-                        progress_popup.cancel()
-                        QMessageBox.critical(
-                            self,
-                            L.dialog.export_error,
-                            L.dialog.export_error_video.format(error=str(e)),
-                            QMessageBox.StandardButton.Ok
-                        )
-                    else:
-                        if progress_popup.wasCanceled():
-                            QMessageBox.warning(
-                                self,
-                                L.dialog.export_aborted,
-                                L.dialog.export_aborted_video,
-                                QMessageBox.StandardButton.Ok
-                            )
-                        else:
-                            QMessageBox.information(
-                                self,
-                                L.dialog.export_complete,
-                                L.dialog.export_complete_video,
-                                QMessageBox.StandardButton.Ok
-                            )
+    def closeEvent(self, event: QCloseEvent) -> None:
+        if not self.export_manager.has_active_exports():
+            event.accept()
+            return
+
+        reply = QMessageBox.question(
+            self,
+            L.dialog.export_aborted,
+            L.dialog.export_close_confirm,
+            QMessageBox.StandardButton.Yes | QMessageBox.StandardButton.No,
+            QMessageBox.StandardButton.No,
+        )
+
+        if reply == QMessageBox.StandardButton.Yes:
+            self.export_manager.kill_all()
+            event.accept()
+        else:
+            event.ignore()
 
     def hotkeys_clicked(self) -> None:
         popup = dialogs.HotkeysInfo(parent=self)

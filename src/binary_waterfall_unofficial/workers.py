@@ -9,6 +9,7 @@ from PySide6.QtCore import QThread, Signal, QMutex
 from PySide6.QtGui import QImage
 
 from . import generators, constants
+from .lang import L
 
 
 class FileWorker(QThread):
@@ -27,21 +28,21 @@ class FileWorker(QThread):
     def run(self) -> None:
         try:
             # 1. Validate file exists
-            self.progress.emit(10, "验证文件...")
+            self.progress.emit(10, L.export.validating_file)
             if self._interrupted:
                 return
             if not os.path.isfile(self.filename):
-                self.error.emit(f"文件不存在: {self.filename}")
+                self.error.emit(L.dialog.file_not_found.format(filename=self.filename))
                 return
             
             # 2. Delete old audio
-            self.progress.emit(20, "清理旧数据...")
+            self.progress.emit(20, L.export.cleaning_data)
             if self._interrupted:
                 return
             self.bw.delete_audio()
             
             # 3. Open file
-            self.progress.emit(30, "打开文件...")
+            self.progress.emit(30, L.export.opening_file_worker)
             if self._interrupted:
                 return
             self.bw.file = open(self.filename, "rb")
@@ -51,7 +52,7 @@ class FileWorker(QThread):
             self.bw.file.seek(0)
             
             # 4. Compute audio filename
-            self.progress.emit(40, "准备音频...")
+            self.progress.emit(40, L.export.preparing_audio)
             _file_path, _file_main_name = os.path.split(self.filename)
             self.bw.audio_filename = os.path.join(
                 self.bw.temp_dir,
@@ -59,7 +60,7 @@ class FileWorker(QThread):
             )
             
             # 5. Load mmap
-            self.progress.emit(60, "加载内存映射...")
+            self.progress.emit(60, L.export.loading_mmap)
             if self._interrupted:
                 return
             
@@ -81,7 +82,7 @@ class FileWorker(QThread):
                     self.bw._rust_loaded = False # pyright: ignore[reportPrivateUsage]
             
             # 6. Done
-            self.progress.emit(100, "文件加载完成")
+            self.progress.emit(100, L.export.file_load_complete)
             self.finished.emit({
                 "filename": self.bw.filename,
                 "total_bytes": self.bw.total_bytes,
@@ -117,11 +118,11 @@ class AudioWorker(QThread):
             assert self.bw.endianness is not None
             
             # 1. Delete old audio
-            self.progress.emit(5, "清理旧音频...")
+            self.progress.emit(5, L.export.cleaning_old_audio)
             self.bw.delete_audio()
             
             # 2. Generate WAV
-            self.progress.emit(10, "生成音频...")
+            self.progress.emit(10, L.export.generating_audio_worker)
             with wave.open(self.bw.audio_filename, "wb") as f:
                 f.setnchannels(self.bw.num_channels)
                 f.setsampwidth(self.bw.sample_bytes)
@@ -152,11 +153,11 @@ class AudioWorker(QThread):
                     
                     read += len(chunk)
                     progress = int(10 + 60 * (read / total)) if total > 0 else 10
-                    self.progress.emit(progress, f"生成音频... {read // 1024 // 1024}MB / {total // 1024 // 1024}MB")
+                    self.progress.emit(progress, L.export.generating_audio_progress.format(read=read // 1024 // 1024, total=total // 1024 // 1024))
             
             # 3. Volume adjustment
             if self.bw.volume != 100:
-                self.progress.emit(75, "调整音量...")
+                self.progress.emit(75, L.export.adjusting_volume)
                 if self._interrupted:
                     return
                 import pydub # pyright: ignore[reportMissingTypeStubs]
@@ -170,7 +171,7 @@ class AudioWorker(QThread):
                 shutil.move(temp_filename, self.bw.audio_filename)
             
             # 4. Calculate duration
-            self.progress.emit(90, "计算音频时长...")
+            self.progress.emit(90, L.export.calculating_duration)
             if self._interrupted:
                 return
             import pydub # pyright: ignore[reportMissingTypeStubs]
@@ -178,7 +179,7 @@ class AudioWorker(QThread):
             self.bw.audio_length_ms = math.ceil(audio_length * 1000) # pyright: ignore[reportUnknownArgumentType, reportUnknownMemberType]
             
             # 5. Done
-            self.progress.emit(100, "音频生成完成")
+            self.progress.emit(100, L.export.audio_generation_complete)
             self.finished.emit(self.bw.audio_filename)
             
         except Exception as e:
@@ -207,7 +208,7 @@ class FrameWorker(QThread):
     def run(self) -> None:
         try:
             if self.bw.audio_length_ms is None:
-                self.error.emit("音频时长未知")
+                self.error.emit(L.dialog.audio_duration_unknown)
                 return
             
             # Pre-render first N frames
@@ -228,11 +229,11 @@ class FrameWorker(QThread):
                     self.frame_ready.emit(i, qimg)
                     
                     progress = int(10 + 80 * (i / total_frames)) if total_frames > 0 else 10
-                    self.progress.emit(progress, f"预渲染帧... {i}/{total_frames}")
+                    self.progress.emit(progress, L.export.pre_rendering_progress.format(i=i, total=total_frames))
                 except Exception:
                     continue  # Skip frames that fail to render
             
-            self.progress.emit(100, "帧缓存完成")
+            self.progress.emit(100, L.export.frame_cache_complete)
             self.finished.emit()
             
         except Exception as e:

@@ -113,7 +113,12 @@
     "is_custom": "（カスタム）",
     "ffmpeg_not_found": "FFmpeg が見つかりません。FFmpeg をインストールして PATH に追加してください。\n\nダウンロード先：https://ffmpeg.org/download.html",
     "audio_export_error": "オーディオのエクスポートに失敗しました：\n{error}",
-    "file_is_very_small": "このファイルは非常に小さい（{size} バイト）ため、生成されるビデオの内容がほとんどないか、まったくない可能性があります。"
+    "file_is_very_small": "このファイルは非常に小さい（{size} バイト）ため、生成されるビデオの内容がほとんどないか、まったくない可能性があります。",
+    "cancel": "キャンセル",
+    "export_progress_title": "{type} をエクスポート中",
+    "export_close_confirm": "エクスポートが進行中です。それでも閉じますか？\n閉じるとすべての中止されます。",
+    "file_not_found": "ファイルが見つかりません：{filename}",
+    "audio_duration_unknown": "オーディオの長さ不明"
   },
   "audio": {
     "channels": "チャンネル：",
@@ -165,11 +170,34 @@
     "m_project_home": "本拡張版プロジェクトホーム：",
     "o_donate": "オリジナル作者への寄付："
   },
-  "progress": {
+  "loading": {
     "opening_file": "ファイルを開いています……",
     "generating_audio": "オーディオを生成しています……",
     "pre_rendering_frames": "フレームをプリレンダリングしています……",
     "splicing_final_video": "最終ビデオファイルを合成しています……（プログラムが応答しなくなる場合があります）",
     "wrapping_up": "仕上げ中……"
+  },
+  "export": {
+    "export_preparing": "準備中...",
+    "validating_file": "ファイルを検証中...",
+    "cleaning_data": "古いデータをクリーニング中...",
+    "opening_file_worker": "ファイルを開いています...",
+    "preparing_audio": "オーディオを準備中...",
+    "loading_mmap": "メモリマップを読み込み中...",
+    "file_load_complete": "ファイルの読み込み完了",
+    "cleaning_old_audio": "古いオーディオをクリーニング中...",
+    "generating_audio_worker": "オーディオを生成中...",
+    "generating_audio_progress": "オーディオを生成中... {read}MB / {total}MB",
+    "adjusting_volume": "音量を調整中...",
+    "calculating_duration": "オーディオの長さを計算中...",
+    "audio_generation_complete": "オーディオの生成完了",
+    "pre_rendering_progress": "フレームをプリレンダリング中... {i}/{total}",
+    "frame_cache_complete": "フレームキャッシュ完了",
+    "building_video": "(1/3) ビデオを構築中...",
+    "writing_audio": "(2/3) オーディオを書き込み中...",
+    "done_writing_audio": "オーディオの書き込み完了！",
+    "writing_video": "(3/3) ビデオを書き込み中...",
+    "done_writing_video": "ビデオの書き込み完了！",
+    "video_is_ready": "ビデオの準備ができました！"
   }
 }

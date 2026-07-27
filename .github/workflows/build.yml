@@ -197,11 +197,10 @@ jobs:
       - name: 📦 安装 Python 依赖
         run: |
           uv sync
-          uv sync --group build
 
       - name: 🏗️ 使用 Nuitka 打包
         shell: bash
-        run: uv run python build.py --assume-yes-for-downloads --lib-path=${{ matrix.artifact_lib_name }}
+        run: uv run build.py --assume-yes-for-downloads --lib-path=${{ matrix.artifact_lib_name }}
 
       - name: 📦 压缩 Nuitka 产物为 7z
         shell: bash

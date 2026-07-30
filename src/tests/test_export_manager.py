@@ -4,7 +4,6 @@ import time
 import multiprocessing
 import pytest
 from PySide6.QtCore import QCoreApplication
-from typing import Any
 
 # Ensure src is in path before importing
 if "src" not in sys.path:
@@ -14,7 +13,6 @@ from binary_waterfall_unofficial.export_manager import (
     ExportManager,
     export_worker,
     CancelledException,
-    _SubprocessDialog,
 )
 
 
@@ -36,22 +34,22 @@ class TestExportManager:
     def test_export_manager_init(self, qapp_instance: QCoreApplication):
         manager = ExportManager()
         assert manager.has_active_exports() is False
-        assert manager._next_id == 0
-        assert len(manager._active) == 0
+        assert manager._next_id == 0  # pyright: ignore[reportPrivateUsage]
+        assert len(manager._active) == 0  # pyright: ignore[reportPrivateUsage]
 
     def test_export_manager_start_export_returns_task_id(self, qapp_instance: QCoreApplication):
         manager = ExportManager()
-        manager._next_id = 0
-        assert manager._next_id == 0
-        manager._next_id += 1
-        assert manager._next_id == 1
+        manager._next_id = 0  # pyright: ignore[reportPrivateUsage]
+        assert manager._next_id == 0  # pyright: ignore[reportPrivateUsage]
+        manager._next_id += 1  # pyright: ignore[reportPrivateUsage]
+        assert manager._next_id == 1  # pyright: ignore[reportPrivateUsage]
 
     def test_export_manager_has_active_exports(self, qapp_instance: QCoreApplication):
         manager = ExportManager()
         assert manager.has_active_exports() is False
-        manager._active[0] = multiprocessing.Process(target=_long_running)
+        manager._active[0] = multiprocessing.Process(target=_long_running)  # pyright: ignore[reportPrivateUsage]
         assert manager.has_active_exports() is True
-        manager._active.clear()
+        manager._active.clear()  # pyright: ignore[reportPrivateUsage]
         assert manager.has_active_exports() is False
 
     def test_export_manager_kill_all(self, qapp_instance: QCoreApplication):
@@ -62,8 +60,8 @@ class TestExportManager:
         p1.start()
         p2.start()
 
-        manager._active[0] = p1
-        manager._active[1] = p2
+        manager._active[0] = p1  # pyright: ignore[reportPrivateUsage]
+        manager._active[1] = p2  # pyright: ignore[reportPrivateUsage]
 
         assert manager.has_active_exports() is True
 
@@ -78,25 +76,25 @@ class TestExportManager:
 
     def test_export_manager_on_done_cleans_up(self, qapp_instance: QCoreApplication):
         manager = ExportManager()
-        manager._active[42] = multiprocessing.Process(target=_long_running)
-        manager._on_done(42, 0)
-        assert 42 not in manager._active
+        manager._active[42] = multiprocessing.Process(target=_long_running)  # pyright: ignore[reportPrivateUsage]
+        manager._on_done(42, 0)  # pyright: ignore[reportPrivateUsage]
+        assert 42 not in manager._active  # pyright: ignore[reportPrivateUsage]
 
     def test_export_manager_task_id_increments(self, qapp_instance: QCoreApplication):
         manager = ExportManager()
-        id1 = manager._next_id
-        manager._next_id += 1
-        id2 = manager._next_id
-        manager._next_id += 1
-        id3 = manager._next_id
+        id1 = manager._next_id  # pyright: ignore[reportPrivateUsage]
+        manager._next_id += 1  # pyright: ignore[reportPrivateUsage]
+        id2 = manager._next_id  # pyright: ignore[reportPrivateUsage]
+        manager._next_id += 1  # pyright: ignore[reportPrivateUsage]
+        id3 = manager._next_id  # pyright: ignore[reportPrivateUsage]
         assert id1 == 0
         assert id2 == 1
         assert id3 == 2
 
     def test_export_manager_on_done_with_unknown_id(self, qapp_instance: QCoreApplication):
         manager = ExportManager()
-        manager._on_done(999, 0)
-        assert 999 not in manager._active
+        manager._on_done(999, 0)  # pyright: ignore[reportPrivateUsage]
+        assert 999 not in manager._active  # pyright: ignore[reportPrivateUsage]
 
     def test_export_manager_kill_all_empty(self, qapp_instance: QCoreApplication):
         manager = ExportManager()
@@ -107,6 +105,7 @@ class TestExportManager:
 class TestSubprocessDialog:
     def test_subprocess_dialog_is_picklable(self):
         """_SubprocessDialog wraps dialog and app, verify it can be imported."""
+        from binary_waterfall_unofficial.export_manager import _SubprocessDialog # pyright: ignore[reportPrivateUsage]
         assert _SubprocessDialog is not None
 
 
@@ -129,7 +128,11 @@ class TestExportManagerIntegration:
         manager = ExportManager()
 
         received_signals: list[tuple[int, int]] = []
-        manager.task_done.connect(lambda task_id, exit_code: received_signals.append((task_id, exit_code)))
+
+        def _on_task_done(task_id: int, exit_code: int) -> None:
+            received_signals.append((task_id, exit_code))
+
+        manager.task_done.connect(_on_task_done)
 
         manager.task_done.emit(1, 0)
         qapp_instance.processEvents()
@@ -141,7 +144,11 @@ class TestExportManagerIntegration:
         manager = ExportManager()
 
         received_signals: list[tuple[int, int]] = []
-        manager.task_done.connect(lambda task_id, exit_code: received_signals.append((task_id, exit_code)))
+
+        def _on_task_done(task_id: int, exit_code: int) -> None:
+            received_signals.append((task_id, exit_code))
+
+        manager.task_done.connect(_on_task_done)
 
         manager.task_done.emit(0, 0)
         manager.task_done.emit(1, 1)

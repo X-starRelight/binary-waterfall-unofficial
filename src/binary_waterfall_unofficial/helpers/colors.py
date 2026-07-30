@@ -37,21 +37,21 @@ def split_rgb_byte(bytestring: tuple[int, ...]) -> tuple[int, int, int]:
 
 
 def filter_rgb_bytes(bytestring: bytes, filter_function: Callable[[int, int, int], tuple[int, int, int]]) -> bytes:
-    result = bytes()
+    result = bytearray()
     for byte in grouper(bytestring, 3, 0x00):
         r, g, b = split_rgb_byte(byte)
         r_filtered, g_filtered, b_filtered = filter_function(r, g, b)
-        result += bytes([r_filtered, g_filtered, b_filtered])
+        result.extend([r_filtered, g_filtered, b_filtered])
 
-    return result
+    return bytes(result)
 
 
 def average_rgb_bytes(bytestring_a: bytes, bytestring_b: bytes):
-    result = bytes()
+    result = bytearray()
     for byte_a, byte_b in zip(grouper(bytestring_a, 3, 0x00), grouper(bytestring_b, 3, 0x00)):
         r_a, g_a, b_a = split_rgb_byte(byte_a)
         r_b, g_b, b_b = split_rgb_byte(byte_b)
         r_average, g_average, b_average = average(r_a, g_a, b_a, r_b, g_b, b_b)
-        result += bytes([r_average, g_average, b_average])
+        result.extend([r_average, g_average, b_average])
 
-    return result
+    return bytes(result)

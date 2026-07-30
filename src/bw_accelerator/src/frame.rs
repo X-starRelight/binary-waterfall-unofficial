@@ -78,3 +78,156 @@ pub fn generate_frame(
         Ok(expected_out as i64)
     })
 }
+
+/// Color format codes (matching Python ColorFmtCode enum)
+#[repr(u8)]
+#[derive(Clone, Copy)]
+pub enum ColorFmtCode {
+    Red = 0,      // 'r'
+    RedInv = 1,   // 'R'
+    Green = 2,    // 'g'
+    GreenInv = 3, // 'G'
+    Blue = 4,     // 'b'
+    BlueInv = 5,  // 'B'
+    White = 6,    // 'w'
+    WhiteInv = 7, // 'W'
+    Unused = 8,   // 'x'
+}
+
+impl ColorFmtCode {
+    pub fn from_u8(val: u8) -> Option<Self> {
+        match val {
+            0 => Some(Self::Red),
+            1 => Some(Self::RedInv),
+            2 => Some(Self::Green),
+            3 => Some(Self::GreenInv),
+            4 => Some(Self::Blue),
+            5 => Some(Self::BlueInv),
+            6 => Some(Self::White),
+            7 => Some(Self::WhiteInv),
+            8 => Some(Self::Unused),
+            _ => None,
+        }
+    }
+}
+
+/// Generate an RGB frame using color format string (fastest path).
+/// 
+/// # Arguments
+/// * `width` - Frame width in pixels
+/// * `height` - Frame height in pixels
+/// * `frame_bytes` - Raw binary data for the frame
+/// * `color_format` - Slice of ColorFmtCode values describing the color mapping
+/// * `color_bytes` - Number of bytes per color component (default 1)
+/// * `out_ptr` - Output buffer pointer (must be at least width * height * 3 bytes)
+/// * `out_len` - Output buffer length
+/// 
+/// # Returns
+/// Number of bytes written to output buffer, or error message
+pub fn generate_frame_with_color_format(
+    width: u32,
+    height: u32,
+    frame_bytes: &[u8],
+    color_format: &[u8],
+    color_bytes: u32,
+    out_ptr: *mut u8,
+    out_len: usize,
+) -> Result<i64, String> {
+    let pixels = (width as usize) * (height as usize);
+    let expected_out = pixels * 3; // RGB output
+    
+    if out_len < expected_out {
+        return Err(format!("Output buffer too small: {} < {}", out_len, expected_out));
+    }
+    
+    let out = unsafe { std::slice::from_raw_parts_mut(out_ptr, out_len) };
+    let color_bytes = color_bytes as usize;
+    
+    // Initialize output to black
+    for i in 0..expected_out {
+        out[i] = 0;
+    }
+    
+    // Process each color format code
+    let mut source_idx = 0;
+    for &fmt_byte in color_format {
+        let fmt = ColorFmtCode::from_u8(fmt_byte)
+            .ok_or_else(|| format!("Invalid color format code: {}", fmt_byte))?;
+        
+        if source_idx >= frame_bytes.len() {
+            break;
+        }
+        
+        match fmt {
+            ColorFmtCode::Red => {
+                for i in 0..pixels {
+                    if source_idx + i * color_bytes < frame_bytes.len() {
+                        out[i * 3] = frame_bytes[source_idx + i * color_bytes];
+                    }
+                }
+            }
+            ColorFmtCode::RedInv => {
+                for i in 0..pixels {
+                    if source_idx + i * color_bytes < frame_bytes.len() {
+                        out[i * 3] = 255 - frame_bytes[source_idx + i * color_bytes];
+                    }
+                }
+            }
+            ColorFmtCode::Green => {
+                for i in 0..pixels {
+                    if source_idx + i * color_bytes < frame_bytes.len() {
+                        out[i * 3 + 1] = frame_bytes[source_idx + i * color_bytes];
+                    }
+                }
+            }
+            ColorFmtCode::GreenInv => {
+                for i in 0..pixels {
+                    if source_idx + i * color_bytes < frame_bytes.len() {
+                        out[i * 3 + 1] = 255 - frame_bytes[source_idx + i * color_bytes];
+                    }
+                }
+            }
+            ColorFmtCode::Blue => {
+                for i in 0..pixels {
+                    if source_idx + i * color_bytes < frame_bytes.len() {
+                        out[i * 3 + 2] = frame_bytes[source_idx + i * color_bytes];
+                    }
+                }
+            }
+            ColorFmtCode::BlueInv => {
+                for i in 0..pixels {
+                    if source_idx + i * color_bytes < frame_bytes.len() {
+                        out[i * 3 + 2] = 255 - frame_bytes[source_idx + i * color_bytes];
+                    }
+                }
+            }
+            ColorFmtCode::White => {
+                for i in 0..pixels {
+                    if source_idx + i * color_bytes < frame_bytes.len() {
+                        let val = frame_bytes[source_idx + i * color_bytes];
+                        out[i * 3] = val;
+                        out[i * 3 + 1] = val;
+                        out[i * 3 + 2] = val;
+                    }
+                }
+            }
+            ColorFmtCode::WhiteInv => {
+                for i in 0..pixels {
+                    if source_idx + i * color_bytes < frame_bytes.len() {
+                        let val = 255 - frame_bytes[source_idx + i * color_bytes];
+                        out[i * 3] = val;
+                        out[i * 3 + 1] = val;
+                        out[i * 3 + 2] = val;
+                    }
+                }
+            }
+            ColorFmtCode::Unused => {
+                // Skip unused bytes
+            }
+        }
+        
+        source_idx += 1;
+    }
+    
+    Ok(expected_out as i64)
+}

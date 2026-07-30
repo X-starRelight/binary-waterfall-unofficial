@@ -45,6 +45,7 @@ _load_file: Any = None
 _get_file_size: Any = None
 _unload_file: Any = None
 _generate_frame: Any = None
+_generate_frame_with_color_format: Any = None
 _compute_audio: Any = None
 _filter_rgb_batch: Any = None
 _export_video: Any = None
@@ -68,35 +69,41 @@ for p in search_paths:
 
 if lib_path is not None:
     try:
-        from senri_ffi import Library, types, address_of as _address_of, pointer  # type: ignore[reportUnknownMemberType]
+        from senri_ffi import Library, types, address_of as _address_of  # type: ignore[reportUnknownMemberType]
 
         address_of = _address_of
         _lib = Library.load(str(lib_path))
 
         # Bind function signatures
-        _load_file = _lib.func("load_file_mmap", types.int64, [types.cstring, types.uint64])  # type: ignore[reportUnknownMemberType]
-        _get_file_size = _lib.func("get_file_size", types.int64, [])  # type: ignore[reportUnknownMemberType]
-        _unload_file = _lib.func("unload_file", types.void, [])  # type: ignore[reportUnknownMemberType]
-        _generate_frame = _lib.func("generate_frame", types.int64, [  # type: ignore[reportUnknownMemberType]
-            types.uint32, types.uint32, types.uint64, types.uint32,  # type: ignore[reportUnknownMemberType]
-            pointer(types.uint8), types.uint64,  # type: ignore[reportUnknownMemberType]
+        _load_file = _lib.func("load_file_mmap", types["int64"], [types["cstring"], types["uint64"]])  # type: ignore[reportUnknownMemberType]
+        _get_file_size = _lib.func("get_file_size", types["int64"], [])  # type: ignore[reportUnknownMemberType]
+        _unload_file = _lib.func("unload_file", types["void"], [])  # type: ignore[reportUnknownMemberType]
+        _generate_frame = _lib.func("generate_frame", types["int64"], [  # type: ignore[reportUnknownMemberType]
+            types["uint32"], types["uint32"], types["uint64"], types["uint32"],  # type: ignore[reportUnknownMemberType]
+            types["pointer"], types["uint64"],  # type: ignore[reportUnknownMemberType]
         ])
-        _compute_audio = _lib.func("compute_audio", types.int64, [  # type: ignore[reportUnknownMemberType]
-            types.uint32, types.uint32, pointer(types.float32),  # type: ignore[reportUnknownMemberType]
+        _compute_audio = _lib.func("compute_audio", types["int64"], [  # type: ignore[reportUnknownMemberType]
+            types["uint32"], types["uint32"], types["pointer"],  # type: ignore[reportUnknownMemberType]
         ])
-        _filter_rgb_batch = _lib.func("filter_rgb_batch", types.int64, [  # type: ignore[reportUnknownMemberType]
-            pointer(types.uint8), types.uint64, types.uint8, types.float64,  # type: ignore[reportUnknownMemberType]
-            pointer(types.uint8),  # type: ignore[reportUnknownMemberType]
+        _filter_rgb_batch = _lib.func("filter_rgb_batch", types["int64"], [  # type: ignore[reportUnknownMemberType]
+            types["pointer"], types["uint64"], types["uint8"], types["float64"],  # type: ignore[reportUnknownMemberType]
+            types["pointer"],  # type: ignore[reportUnknownMemberType]
         ])
-        _export_video = _lib.func("export_video", types.int64, [  # type: ignore[reportUnknownMemberType]
-            types.cstring, types.uint64, types.uint32, types.uint32,  # type: ignore[reportUnknownMemberType]
-            types.float64, types.uint64, types.uint32, types.uint8,  # type: ignore[reportUnknownMemberType]
-            types.float64, pointer(types.float64),  # type: ignore[reportUnknownMemberType]
+        _export_video = _lib.func("export_video", types["int64"], [  # type: ignore[reportUnknownMemberType]
+            types["cstring"], types["uint64"], types["uint32"], types["uint32"],  # type: ignore[reportUnknownMemberType]
+            types["float64"], types["uint64"], types["uint32"], types["uint8"],  # type: ignore[reportUnknownMemberType]
+            types["float64"], types["pointer"],  # type: ignore[reportUnknownMemberType]
         ])
-        _export_sequence = _lib.func("export_sequence", types.int64, [  # type: ignore[reportUnknownMemberType]
-            types.cstring, types.uint64, types.uint32, types.uint32,  # type: ignore[reportUnknownMemberType]
-            types.uint32, types.uint8, types.float64, types.uint64,  # type: ignore[reportUnknownMemberType]
-            types.uint64, pointer(types.float64),  # type: ignore[reportUnknownMemberType]
+        _export_sequence = _lib.func("export_sequence", types["int64"], [  # type: ignore[reportUnknownMemberType]
+            types["cstring"], types["uint64"], types["uint32"], types["uint32"],  # type: ignore[reportUnknownMemberType]
+            types["uint32"], types["uint8"], types["float64"], types["uint64"],  # type: ignore[reportUnknownMemberType]
+            types["uint64"], types["pointer"],  # type: ignore[reportUnknownMemberType]
+        ])
+        _generate_frame_with_color_format = _lib.func("generate_frame_with_color_format", types["int64"], [  # type: ignore[reportUnknownMemberType]
+            types["pointer"], types["uint64"],  # type: ignore[reportUnknownMemberType]
+            types["pointer"], types["uint64"],  # type: ignore[reportUnknownMemberType]
+            types["uint32"], types["uint32"], types["uint32"],  # type: ignore[reportUnknownMemberType]
+            types["pointer"], types["uint64"],  # type: ignore[reportUnknownMemberType]
         ])
 
         RUST_AVAILABLE: bool = True # pyright: ignore[reportConstantRedefinition]
@@ -183,7 +190,7 @@ def generate_frame(width: int, height: int, frame_number: int, bit_depth: int) -
     pixels = width * height
     out_len = pixels * 4  # RGBA
     out_buf = bytearray(out_len)
-    out_addr = address_of(out_buf)  # type: ignore[misc]
+    out_addr = address_of(out_buf).address  # type: ignore[misc]
 
     result = _generate_frame(
         width, height, frame_number, bit_depth,
@@ -194,6 +201,59 @@ def generate_frame(width: int, height: int, frame_number: int, bit_depth: int) -
         raise RuntimeError(f"Frame generation failed: error code {result}")
 
     return np.frombuffer(out_buf, dtype=np.uint8).reshape((height, width, 4)).copy()
+
+
+def generate_frame_with_color_format(
+    frame_bytes: bytes,
+    color_format: list[int],
+    width: int,
+    height: int,
+    color_bytes: int = 1,
+) -> np.ndarray:
+    """Generate an RGB frame using color format string.
+    
+    This is the fastest path for frame generation with custom color formats.
+    
+    Args:
+        frame_bytes: Raw binary data for the frame
+        color_format: List of color format codes (0=Red, 1=RedInv, 2=Green, etc.)
+        width: Frame width in pixels
+        height: Frame height in pixels
+        color_bytes: Number of bytes per color component (default 1)
+    
+    Returns:
+        numpy array of shape (height, width, 3) with dtype uint8 (RGB)
+    
+    Raises:
+        RuntimeError: If generation fails
+    """
+    if not RUST_AVAILABLE:
+        raise RuntimeError("Rust accelerator not available")
+    
+    pixels = width * height
+    out_len = pixels * 3  # RGB output
+    out_buf = bytearray(out_len)
+    out_addr = address_of(out_buf).address  # type: ignore[misc]
+    
+    # Convert frame_bytes to buffer
+    frame_buf = bytearray(frame_bytes)
+    frame_addr = address_of(frame_buf).address  # type: ignore[misc]
+    
+    # Convert color_format to buffer
+    fmt_buf = bytearray(color_format)
+    fmt_addr = address_of(fmt_buf).address  # type: ignore[misc]
+    
+    result = _generate_frame_with_color_format(
+        frame_addr, len(frame_bytes),
+        fmt_addr, len(color_format),
+        width, height, color_bytes,
+        out_addr, out_len
+    )
+    
+    if result < 0:
+        raise RuntimeError(f"Frame generation failed: error code {result}")
+    
+    return np.frombuffer(out_buf, dtype=np.uint8).reshape((height, width, 3)).copy()
 
 
 def compute_audio(num_samples: int, sample_rate: int = 44100) -> np.ndarray:
@@ -213,7 +273,7 @@ def compute_audio(num_samples: int, sample_rate: int = 44100) -> np.ndarray:
         raise RuntimeError("Rust accelerator not available")
 
     out_buf = bytearray(num_samples * 4)  # 4 bytes per float32
-    out_addr = address_of(out_buf)  # type: ignore[misc]
+    out_addr = address_of(out_buf).address  # type: ignore[misc]
 
     result = _compute_audio(num_samples, sample_rate, out_addr)
 
@@ -254,9 +314,9 @@ def filter_rgb_batch(
 
     num_pixels = len(flat) // 3
     in_buf = bytearray(np.ascontiguousarray(flat, dtype=np.uint8).tobytes())
-    in_addr = address_of(in_buf)  # type: ignore[misc]
+    in_addr = address_of(in_buf).address  # type: ignore[misc]
     out_buf = bytearray(num_pixels * 3)
-    out_addr = address_of(out_buf)  # type: ignore[misc]
+    out_addr = address_of(out_buf).address  # type: ignore[misc]
 
     result = _filter_rgb_batch(in_addr, num_pixels, filter_type, value, out_addr)
 
@@ -306,7 +366,7 @@ def export_video(
 
     # Progress pointer
     progress_buf = bytearray(8)  # 8 bytes for f64
-    progress_addr = address_of(progress_buf)  # type: ignore[misc]
+    progress_addr = address_of(progress_buf).address  # type: ignore[misc]
 
     result = _export_video(
         path_bytes, len(path_bytes),
@@ -362,7 +422,7 @@ def export_sequence(
 
     # Progress pointer
     progress_buf = bytearray(8)
-    progress_addr = address_of(progress_buf)  # type: ignore[misc]
+    progress_addr = address_of(progress_buf).address  # type: ignore[misc]
 
     result = _export_sequence(
         path_bytes, len(path_bytes),

@@ -55,6 +55,26 @@ def get_file_size():
     return _file_size
 
 
+def get_file_bytes(offset: int, count: int) -> bytes:
+    """Get bytes from the loaded file at the specified offset.
+    
+    Args:
+        offset: Byte offset to start reading from
+        count: Number of bytes to read
+    
+    Returns:
+        bytes: The requested data
+    """
+    if _file_data is None:
+        raise RuntimeError("No file loaded")
+    
+    end = min(offset + count, _file_size)
+    if offset >= _file_size:
+        return b""
+    
+    return bytes(_file_data[offset:end])
+
+
 def unload_file():
     """Unload the currently loaded file."""
     global _file_data, _file_size
@@ -113,6 +133,92 @@ def generate_frame(width: int, height: int, frame_number: int, bit_depth: Litera
         raise ValueError(f"Unsupported bit depth: {bit_depth}")
 
     return rgba
+
+
+def generate_frame_with_color_format(
+    width: int, 
+    height: int, 
+    frame_bytes: bytes, 
+    color_format: list[str | int],
+    color_bytes: int = 1
+):
+    """Generate an RGB frame from binary data using color format string.
+    
+    This is the numpy fallback for the Rust acceleration.
+    
+    Args:
+        width: Frame width in pixels
+        height: Frame height in pixels
+        frame_bytes: Raw binary data for the frame
+        color_format: List of color format codes (e.g., [ColorFmtCode.RED, ColorFmtCode.GREEN, ColorFmtCode.BLUE])
+        color_bytes: Number of bytes per color component (default 1)
+    
+    Returns:
+        numpy array of shape (height, width, 3) with dtype uint8 (RGB)
+    """
+    total_pixels = width * height
+    
+    # Convert frame_bytes to numpy array
+    if len(frame_bytes) > 0:
+        frame_np = np.frombuffer(frame_bytes, dtype=np.uint8)
+    else:
+        frame_np = np.array([], dtype=np.uint8)
+    
+    # Initialize RGB output array
+    rgb_frame = np.zeros((total_pixels, 3), dtype=np.uint8)
+    
+    # Import constants for color format codes
+    from .constants.enums import ColorFmtCode
+    
+    # Map color format codes to RGB channels
+    source_idx = 0
+    for fmt in color_format:
+        if source_idx >= len(frame_np):
+            break
+        
+        # Convert to enum if it's a string
+        fmt_code = None
+        if isinstance(fmt, str):
+            # Try to find matching enum by value
+            for e in ColorFmtCode:
+                if e.value == fmt:
+                    fmt_code = e
+                    break
+        
+        if fmt_code is None:
+            source_idx += 1
+            continue
+            
+        # Get all pixels for this color component
+        pixel_data = frame_np[source_idx::color_bytes][:total_pixels]
+        
+        if fmt_code == ColorFmtCode.RED:
+            rgb_frame[:, 0] = pixel_data
+        elif fmt_code == ColorFmtCode.RED_INV:
+            rgb_frame[:, 0] = 255 - pixel_data
+        elif fmt_code == ColorFmtCode.GREEN:
+            rgb_frame[:, 1] = pixel_data
+        elif fmt_code == ColorFmtCode.GREEN_INV:
+            rgb_frame[:, 1] = 255 - pixel_data
+        elif fmt_code == ColorFmtCode.BLUE:
+            rgb_frame[:, 2] = pixel_data
+        elif fmt_code == ColorFmtCode.BLUE_INV:
+            rgb_frame[:, 2] = 255 - pixel_data
+        elif fmt_code == ColorFmtCode.WHITE:
+            rgb_frame[:, 0] = pixel_data
+            rgb_frame[:, 1] = pixel_data
+            rgb_frame[:, 2] = pixel_data
+        elif fmt_code == ColorFmtCode.WHITE_INV:
+            rgb_frame[:, 0] = 255 - pixel_data
+            rgb_frame[:, 1] = 255 - pixel_data
+            rgb_frame[:, 2] = 255 - pixel_data
+        elif fmt_code == ColorFmtCode.UNUSED:
+            pass  # Skip unused bytes
+        
+        source_idx += 1
+    
+    # Reshape to (height, width, 3)
+    return rgb_frame.reshape((height, width, 3))
 
 
 def compute_audio(num_samples: int, sample_rate: int=44100):

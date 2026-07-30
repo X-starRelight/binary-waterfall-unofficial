@@ -91,7 +91,6 @@ def export_worker(
         progress.close()
 
         if not dialog.wasCanceled():
-            from .lang import L
             _map = {
                 "frame": L.dialog.export_complete_frame,
                 "audio": L.dialog.export_complete_audio,
@@ -105,7 +104,6 @@ def export_worker(
             )
             sys.exit(0)
         else:
-            from .lang import L
             _abort_map = {
                 "frame": getattr(L.dialog, "export_aborted_frame", L.dialog.export_aborted),
                 "audio": getattr(L.dialog, "export_aborted_frame", L.dialog.export_aborted),
@@ -121,7 +119,6 @@ def export_worker(
 
     except CancelledException:
         progress.close()
-        from .lang import L
         QMessageBox.warning(
             None,
             L.dialog.export_aborted,
@@ -131,7 +128,6 @@ def export_worker(
 
     except Exception as e:
         progress.close()
-        from .lang import L
         _err_map = {
             "frame": L.dialog.export_error_frame,
             "audio": L.dialog.export_error_audio,

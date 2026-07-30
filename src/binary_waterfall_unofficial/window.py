@@ -298,7 +298,23 @@ class MyQMainWindow(QMainWindow):
 
     def _on_export_done(self, task_id: int, exit_code: int) -> None:
         """导出子进程完成时调用。"""
-        pass
+        if exit_code == 0:
+            QMessageBox.information(
+                self,
+                L.dialog.export_complete,
+                L.dialog.export_complete,
+                QMessageBox.StandardButton.Ok
+            )
+        elif exit_code == 2:
+            # User cancelled - no message needed
+            pass
+        else:
+            QMessageBox.warning(
+                self,
+                L.dialog.export_error,
+                L.dialog.export_error,
+                QMessageBox.StandardButton.Ok
+            )
 
     def _build_language_menu(self) -> None:
         """构建语言子菜单"""
@@ -772,6 +788,7 @@ class MyQMainWindow(QMainWindow):
         )
 
         if filename != "":
+            # breakpoint()
             file_size = os.path.getsize(filename)
             if file_size == 0:
                 QMessageBox.critical(

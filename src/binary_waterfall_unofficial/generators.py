@@ -2,11 +2,13 @@ import os
 import shutil
 import tempfile
 import math
+import time
 import struct # pyright: ignore[reportUnusedImport]
 from typing import IO, Any, Literal, cast
 import wave
 from PIL import Image, ImageOps
 import pydub # pyright: ignore[reportMissingTypeStubs]
+from PySide6.QtCore import QMutex
 from PySide6.QtGui import QImage
 
 from .constants.enums import ColorFmtCode, ColorModeCode
@@ -71,6 +73,7 @@ class BinaryWaterfall:
         self.alignment: constants.AlignmentCode | None = None
         self.playhead_visible: bool | None = None
         self._rust_loaded: bool = False
+        self._mutex = QMutex()  # Thread safety for shared state
 
         # Make the temp dir for the class instance
         self.temp_dir: str = tempfile.mkdtemp()
@@ -105,6 +108,13 @@ class BinaryWaterfall:
 
     def __del__(self) -> None:
         self.cleanup()
+    
+    def __enter__(self):
+        return self
+    
+    def __exit__(self, exc_type: type[BaseException] | None, exc_val: BaseException | None, exc_tb: Any) -> bool:
+        self.cleanup()
+        return False
 
     def close_file(self) -> None:
         if _RUST_AVAILABLE and self._rust_loaded:
@@ -119,43 +129,50 @@ class BinaryWaterfall:
         self.filename = None
 
     def set_filename(self, filename: str | None) -> None:
-        # Delete current audio file if it exists
-        self.delete_audio()
-
-        if filename is None:
-            # Reset all vars and close the file pointer
+        """Thread-safe filename change."""
+        self._mutex.lock()
+        try:
+            # Delete current audio file if it exists
+            self.delete_audio()
+            
+            # Close old file handle first to prevent file handle leak
             self.close_file()
-            self.total_bytes = None
-            self.audio_filename = None
-            return
 
-        if not os.path.isfile(filename):
-            raise FileNotFoundError(f"File not found: \"{filename}\"")
+            if filename is None:
+                # Reset all vars
+                self.total_bytes = None
+                self.audio_filename = None
+                return
 
-        self.filename = os.path.realpath(filename)
+            if not os.path.isfile(filename):
+                raise FileNotFoundError(f"File not found: \"{filename}\"")
 
-        # Open file
-        self.file = open(self.filename, "rb")
+            self.filename = os.path.realpath(filename)
 
-        # Get total number of bytes
-        self.file.seek(0, os.SEEK_END)
-        self.total_bytes = self.file.tell()
-        self.file.seek(0)
+            # Open file
+            self.file = open(self.filename, "rb")
 
-        # Compute audio file name
-        _file_path, _file_main_name = os.path.split(self.filename)
-        self.audio_filename = os.path.join(
-            self.temp_dir,
-            _file_main_name + os.path.extsep + "wav"
-        )
+            # Get total number of bytes
+            self.file.seek(0, os.SEEK_END)
+            self.total_bytes = self.file.tell()
+            self.file.seek(0)
 
-        # Try to load via Rust mmap
-        if _RUST_AVAILABLE:
-            try:
-                rust_bridge.load_file(self.filename) # pyright: ignore[reportPossiblyUnboundVariable]
-                self._rust_loaded = True
-            except Exception:
-                self._rust_loaded = False
+            # Compute audio file name
+            _file_path, _file_main_name = os.path.split(self.filename)
+            self.audio_filename = os.path.join(
+                self.temp_dir,
+                _file_main_name + os.path.extsep + "wav"
+            )
+
+            # Try to load via Rust mmap
+            if _RUST_AVAILABLE:
+                try:
+                    rust_bridge.load_file(self.filename) # pyright: ignore[reportPossiblyUnboundVariable]
+                    self._rust_loaded = True
+                except Exception:
+                    self._rust_loaded = False
+        finally:
+            self._mutex.unlock()
 
     def set_dims(self, width: int, height: int) -> None:
         if width < 4:
@@ -353,10 +370,17 @@ class BinaryWaterfall:
         if self.audio_filename is None:
             # Do nothing
             return
-        try:
-            os.remove(self.audio_filename)
-        except FileNotFoundError:
-            pass
+        for attempt in range(3):
+            try:
+                os.remove(self.audio_filename)
+                return
+            except PermissionError:
+                if attempt < 2:
+                    time.sleep(0.1)
+                else:
+                    pass
+            except FileNotFoundError:
+                return
 
     def get_audio_length(self) -> int:
         assert self.audio_filename is not None
@@ -371,12 +395,12 @@ class BinaryWaterfall:
             self.audio_length_ms = None
             return
 
-        assert self.audio_filename is not None
-        assert self.num_channels is not None
-        assert self.sample_bytes is not None
-        assert self.sample_rate is not None
-        assert self.file is not None
-        assert self.endianness is not None
+        assert self.audio_filename is not None, 'audio_filename is None'
+        assert self.num_channels is not None, 'num_channels is None'
+        assert self.sample_bytes is not None, 'sample_bytes is None'
+        assert self.sample_rate is not None, 'sample_rate is None'
+        assert self.file is not None, 'file is None'
+        assert self.endianness is not None, 'endianness is None'
 
         # Delete current file if it exists
         self.delete_audio()
@@ -392,7 +416,12 @@ class BinaryWaterfall:
             needs_swap = (self.endianness == constants.EndiannessCode.BIG and self.sample_bytes > 1)
 
             assert self.file is not None
+            frame_size = self.num_channels * self.sample_bytes
             for chunk in iter(lambda: self.file.read(4096), b""): # pyright: ignore[reportOptionalMemberAccess, reportUnknownLambdaType]
+                # Pad chunk to frame boundary with zeros
+                remainder = len(chunk) % frame_size
+                if remainder != 0:
+                    chunk = chunk + b'\x00' * (frame_size - remainder)
                 if needs_swap and len(chunk) >= self.sample_bytes:
                     # Swap bytes for big-endian to little-endian conversion
                     swapped = bytearray()
@@ -426,16 +455,22 @@ class BinaryWaterfall:
         self.compute_audio()
 
     def get_file_bytes(self, address: int, count: int) -> bytes:
-        assert self.file is not None
-        self.file.seek(address)
-        return self.file.read(count)
+        """Thread-safe file byte access."""
+        self._mutex.lock()
+        try:
+            if self.file is None:
+                return b""
+            self.file.seek(address)
+            return self.file.read(count)
+        finally:
+            self._mutex.unlock()
 
     def get_address(self, ms: int) -> int:
-        assert self.width is not None
-        assert self.color_bytes is not None
-        assert self.total_bytes is not None
-        assert self.audio_length_ms is not None
-        assert self.height is not None
+        assert self.width is not None, 'width is None'
+        assert self.color_bytes is not None, 'color_bytes is None'
+        assert self.total_bytes is not None, 'total_bytes is None'
+        assert self.audio_length_ms is not None, 'audio_length_ms is None'
+        assert self.height is not None, 'height is None'
 
         # Get the size of a single "block" (a row, we only move in increments of 1 row)
         address_block_size: int = self.width * self.color_bytes
@@ -468,17 +503,19 @@ class BinaryWaterfall:
 
     # A 1D Python byte string
     def get_frame_bytestring(self, ms: int) -> bytes:
-        assert self.width is not None
-        assert self.height is not None
-        assert self.color_bytes is not None
-        assert self.color_format is not None
+        assert self.width is not None, 'width is None'
+        assert self.height is not None, 'height is None'
+        assert self.color_bytes is not None, 'color_bytes is None'
+        assert self.color_format is not None, 'color_format is None'
 
-        picture_bytes = bytes()
+        import numpy as np
 
         address = self.get_address(ms)
+        
         # Compensate for negative addresses
+        pad_pixels = 0
         if address < 0:
-            picture_bytes += b"\x00" * 3 * round(-address / self.color_bytes)
+            pad_pixels = round(-address / self.color_bytes)
             address = 0
 
         # Get the maximum number of bytes that could be used for this frame
@@ -488,50 +525,76 @@ class BinaryWaterfall:
         )
 
         full_length: int = (self.width * self.height * 3)
+        total_pixels = self.width * self.height
 
-        idx = 0
-        for _row in range(self.height):
-            for _col in range(self.width):
-                # If we already have a full frame, stop the loops
-                if len(picture_bytes) >= full_length:
-                    break
+        # Convert frame_bytes to numpy array for vectorized operations
+        if len(frame_bytes) > 0:
+            frame_np = np.frombuffer(frame_bytes, dtype=np.uint8)
+        else:
+            frame_np = np.array([], dtype=np.uint8)
 
-                # Fill one RGB byte value
-                this_byte = [b'\x00', b'\x00', b'\x00']
-                for c in self.color_format:
-                    if c == constants.ColorFmtCode.RED:  # Red
-                        this_byte[0] = frame_bytes[idx:idx + 1]
-                    elif c == constants.ColorFmtCode.RED_INV:  # Red inverted
-                        this_byte[0] = helpers.filter_rgb_bytes(frame_bytes[idx:idx + 1], helpers.invert)
-                    elif c == constants.ColorFmtCode.GREEN:  # Green
-                        this_byte[1] = frame_bytes[idx:idx + 1]
-                    elif c == constants.ColorFmtCode.GREEN_INV:  # Green inverted
-                        this_byte[1] = helpers.filter_rgb_bytes(frame_bytes[idx:idx + 1], helpers.invert)
-                    elif c == constants.ColorFmtCode.BLUE:  # Blue
-                        this_byte[2] = frame_bytes[idx:idx + 1]
-                    elif c == constants.ColorFmtCode.BLUE_INV:  # Blue inverted
-                        this_byte[2] = helpers.filter_rgb_bytes(frame_bytes[idx:idx + 1], helpers.invert)
-                    elif c == constants.ColorFmtCode.WHITE:  # RGB
-                        this_byte[0] = frame_bytes[idx:idx + 1]
-                        this_byte[1] = frame_bytes[idx:idx + 1]
-                        this_byte[2] = frame_bytes[idx:idx + 1]
-                    elif c == constants.ColorFmtCode.WHITE_INV:   # RGB inverted
-                        this_byte[0] = helpers.filter_rgb_bytes(frame_bytes[idx:idx + 1], helpers.invert)
-                        this_byte[1] = helpers.filter_rgb_bytes(frame_bytes[idx:idx + 1], helpers.invert)
-                        this_byte[2] = helpers.filter_rgb_bytes(frame_bytes[idx:idx + 1], helpers.invert)
+        # Initialize RGB output array
+        rgb_frame = np.zeros((total_pixels, 3), dtype=np.uint8)
+        
+        # Map color format codes to RGB channels
+        # Color format is a list like [RED, GREEN, BLUE] or [WHITE, UNUSED, UNUSED]
+        # Each entry in color_format corresponds to one byte per pixel in the source
+        source_idx = 0
+        for fmt in self.color_format:
+            if source_idx >= len(frame_np):
+                break
+            
+            # Get all pixels for this color component
+            # The bytes are interleaved: for color_bytes=3 and format "rgb":
+            # frame_np[0]=R0, frame_np[1]=G0, frame_np[2]=B0, frame_np[3]=R1, ...
+            # So we need to extract every color_bytes-th byte starting at source_idx
+            pixel_data = frame_np[source_idx::self.color_bytes][:total_pixels]
+            # Pad with zeros if not enough data (near end of file)
+            if len(pixel_data) < total_pixels:
+                pixel_data = np.pad(pixel_data, (0, total_pixels - len(pixel_data)), constant_values=0)
+            
+            if fmt == constants.ColorFmtCode.RED:
+                rgb_frame[:, 0] = pixel_data
+            elif fmt == constants.ColorFmtCode.RED_INV:
+                rgb_frame[:, 0] = 255 - pixel_data
+            elif fmt == constants.ColorFmtCode.GREEN:
+                rgb_frame[:, 1] = pixel_data
+            elif fmt == constants.ColorFmtCode.GREEN_INV:
+                rgb_frame[:, 1] = 255 - pixel_data
+            elif fmt == constants.ColorFmtCode.BLUE:
+                rgb_frame[:, 2] = pixel_data
+            elif fmt == constants.ColorFmtCode.BLUE_INV:
+                rgb_frame[:, 2] = 255 - pixel_data
+            elif fmt == constants.ColorFmtCode.WHITE:
+                rgb_frame[:, 0] = pixel_data
+                rgb_frame[:, 1] = pixel_data
+                rgb_frame[:, 2] = pixel_data
+            elif fmt == constants.ColorFmtCode.WHITE_INV:
+                rgb_frame[:, 0] = 255 - pixel_data
+                rgb_frame[:, 1] = 255 - pixel_data
+                rgb_frame[:, 2] = 255 - pixel_data
+            elif fmt == constants.ColorFmtCode.UNUSED:
+                pass  # Skip unused bytes
+            
+            source_idx += 1
 
-                    idx += 1
-
-                picture_bytes += b"".join(this_byte)
-            else:
-                continue
-            break
+        # Convert to bytearray for efficient assembly
+        picture_bytes = bytearray()
+        
+        # Add padding for negative addresses
+        if pad_pixels > 0:
+            picture_bytes.extend(b"\x00" * (pad_pixels * 3))
+        
+        # Add the RGB frame data, but don't exceed full_length
+        remaining = full_length - len(picture_bytes)
+        frame_data = rgb_frame.tobytes()
+        picture_bytes.extend(frame_data[:remaining])
 
         # Pad picture data if we don't have a full frame (near the end of the file)
         picture_bytes_length = len(picture_bytes)
         if picture_bytes_length < full_length:
             pad_length: int = full_length - picture_bytes_length
-            picture_bytes += b"\x00" * pad_length
+            picture_bytes.extend(b"\x00" * pad_length)
 
         # Invert playhead row if needed
         if self.playhead_visible:
@@ -540,22 +603,21 @@ class BinaryWaterfall:
             playhead_start: int = playhead_row * row_size
             playhead_end: int = playhead_start + row_size
 
-            playhead: bytes = picture_bytes[playhead_start:playhead_end]
+            playhead: bytes = bytes(picture_bytes[playhead_start:playhead_end])
             playhead_contrast = helpers.filter_rgb_bytes(playhead, helpers.pick_shade_from_luminance) # pyright: ignore[reportUnknownArgumentType]
 
             playhead = helpers.filter_rgb_bytes(playhead, helpers.invert)
             playhead = helpers.filter_rgb_bytes(playhead, helpers.desaturate)
             playhead = helpers.average_rgb_bytes(playhead, playhead_contrast)
 
+            picture_bytes[playhead_start:playhead_end] = playhead
 
-            picture_bytes = picture_bytes[:playhead_start] + playhead + picture_bytes[playhead_end:]
-
-        return picture_bytes
+        return bytes(picture_bytes)
 
     # A PIL Image (RGB)
     def get_frame_image(self, ms: int) -> Image.Image:
-        assert self.width is not None
-        assert self.height is not None
+        assert self.width is not None, 'width is None'
+        assert self.height is not None, 'height is None'
         frame_bytesring = self.get_frame_bytestring(ms)
         img = Image.frombytes("RGB", (self.width, self.height), frame_bytesring)
 
@@ -568,8 +630,8 @@ class BinaryWaterfall:
 
     # A QImage (RGB)
     def get_frame_qimage(self, ms: int) -> QImage:
-        assert self.width is not None
-        assert self.height is not None
+        assert self.width is not None, 'width is None'
+        assert self.height is not None, 'height is None'
         frame_bytesring = self.get_frame_bytestring(ms)
         qimg = QImage(
             frame_bytesring,
@@ -587,7 +649,11 @@ class BinaryWaterfall:
     def cleanup(self) -> None:
         self.close_file()
         self.delete_audio()
-        shutil.rmtree(self.temp_dir)
+        if os.path.exists(self.temp_dir):
+            try:
+                shutil.rmtree(self.temp_dir)
+            except OSError:
+                pass  # Directory may already be removed or locked
 
 
 # Watermarker class

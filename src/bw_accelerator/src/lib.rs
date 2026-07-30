@@ -114,3 +114,38 @@ pub extern "C" fn export_sequence(
         Err(_) => -1,
     }
 }
+
+/// Generate an RGB frame using color format string.
+/// 
+/// # Arguments
+/// * `frame_bytes_ptr` - Pointer to frame data
+/// * `frame_bytes_len` - Length of frame data
+/// * `color_format_ptr` - Pointer to color format codes (u8 array)
+/// * `color_format_len` - Length of color format array
+/// * `width` - Frame width
+/// * `height` - Frame height
+/// * `color_bytes` - Bytes per color component (default 1)
+/// * `out_ptr` - Output buffer (RGB, width * height * 3 bytes)
+/// * `out_len` - Output buffer length
+#[no_mangle]
+pub extern "C" fn generate_frame_with_color_format(
+    frame_bytes_ptr: *const u8,
+    frame_bytes_len: usize,
+    color_format_ptr: *const u8,
+    color_format_len: usize,
+    width: u32,
+    height: u32,
+    color_bytes: u32,
+    out_ptr: *mut u8,
+    out_len: usize,
+) -> i64 {
+    let frame_bytes = unsafe { std::slice::from_raw_parts(frame_bytes_ptr, frame_bytes_len) };
+    let color_format = unsafe { std::slice::from_raw_parts(color_format_ptr, color_format_len) };
+    
+    match frame::generate_frame_with_color_format(
+        width, height, frame_bytes, color_format, color_bytes, out_ptr, out_len,
+    ) {
+        Ok(n) => n,
+        Err(_) => -1,
+    }
+}

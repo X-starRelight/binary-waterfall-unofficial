@@ -81,7 +81,7 @@ class FileWorker(QThread):
                 except Exception:
                     self.bw._rust_loaded = False # pyright: ignore[reportPrivateUsage]
             
-            # 6. Done
+            # 6. Done=
             self.progress.emit(100, L.export.file_load_complete)
             self.finished.emit({
                 "filename": self.bw.filename,
@@ -90,6 +90,7 @@ class FileWorker(QThread):
             })
             
         except Exception as e:
+            print(e)
             self.error.emit(str(e))
     
     def interrupt(self) -> None:
@@ -110,12 +111,12 @@ class AudioWorker(QThread):
     
     def run(self) -> None:
         try:
-            assert self.bw.audio_filename is not None
-            assert self.bw.file is not None
-            assert self.bw.num_channels is not None
-            assert self.bw.sample_bytes is not None
-            assert self.bw.sample_rate is not None
-            assert self.bw.endianness is not None
+            assert self.bw.audio_filename is not None, 'audio_filename is None'
+            assert self.bw.file is not None, 'file is None'
+            assert self.bw.num_channels is not None, 'num_channels is None'
+            assert self.bw.sample_bytes is not None, 'sample_bytes is None'
+            assert self.bw.sample_rate is not None, 'sample_rate is None'
+            assert self.bw.endianness is not None, 'endianness is None'
             
             # 1. Delete old audio
             self.progress.emit(5, L.export.cleaning_old_audio)
@@ -135,9 +136,15 @@ class AudioWorker(QThread):
                 total = self.bw.total_bytes or 0
                 read = 0
                 assert self.bw.file is not None
+                frame_size = self.bw.num_channels * self.bw.sample_bytes
                 for chunk in iter(lambda: self.bw.file.read(4096), b""): # pyright: ignore[reportOptionalMemberAccess]
                     if self._interrupted:
                         return
+                    
+                    # Pad chunk to frame boundary with zeros
+                    remainder = len(chunk) % frame_size
+                    if remainder != 0:
+                        chunk = chunk + b'\x00' * (frame_size - remainder)
                     
                     if needs_swap and len(chunk) >= self.bw.sample_bytes:
                         swapped = bytearray()

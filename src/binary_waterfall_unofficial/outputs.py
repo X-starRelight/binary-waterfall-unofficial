@@ -1,16 +1,16 @@
 from __future__ import annotations
+
 from typing import Any, cast
 from moviepy import VideoClip # pyright: ignore[reportMissingTypeStubs]
 
 import os
 import shutil
 import math
-import time
 import tempfile
 import pydub # pyright: ignore[reportMissingTypeStubs]
 from moviepy import ImageSequenceClip, AudioFileClip # pyright: ignore[reportMissingTypeStubs]
 from PIL import Image
-from PySide6.QtCore import QUrl, Qt
+from PySide6.QtCore import QUrl, Qt, QTimer
 from PySide6.QtMultimedia import QMediaPlayer, QAudioOutput
 from PySide6.QtGui import QImage, QPixmap
 from PySide6.QtWidgets import QProgressDialog, QMessageBox
@@ -48,6 +48,9 @@ class Player:
 
         self.set_play_button = set_playbutton_function
         self.set_seekbar_function = set_seekbar_function
+        
+        # Cache Watermarker instance to avoid repeated PNG loading
+        self._watermarker = generators.Watermarker()
 
         # Initialize player as black
         self.clear_image()
@@ -104,7 +107,7 @@ class Player:
             color=constants.COLORS["viewer"]
         )
 
-        background_image = generators.Watermarker().mark(background_image)
+        background_image = self._watermarker.mark(background_image)
 
         img_bytestring = background_image.convert("RGB").tobytes()
 
@@ -233,7 +236,7 @@ class Player:
         self.file_worker.error.connect(self._on_worker_error) # pyright: ignore[reportUnknownMemberType]
         self.file_worker.start()
     
-    def _on_file_ready(self, info: dict) -> None: # pyright: ignore[reportUnknownParameterType, reportMissingTypeArgument]
+    def _on_file_ready(self, info: dict[str, str | int]) -> None: # pyright: ignore[reportUnknownParameterType, reportMissingTypeArgument]
         self.update_progress(40, L.loading.generating_audio)
         
         # Start AudioWorker
@@ -324,10 +327,17 @@ class Player:
             pass
 
         self.audio.stop()
-        time.sleep(0.001)  # Without a short delay here, we crash
         self.set_audio_file(None)
+        # Use QTimer.singleShot instead of time.sleep to avoid blocking GUI
+        QTimer.singleShot(10, self._finish_close_file)
+    
+    def _finish_close_file(self) -> None:
+        """Complete the file closing process after a short delay."""
 
-        self.bw.change_filename(None)
+        # Only reset filename if no new file worker has been started
+        # (race condition: new file may have been opened during the delay)
+        if self.file_worker is None:
+            self.bw.change_filename(None)
 
         self.restart()
         self.clear_image()
@@ -352,6 +362,15 @@ class Player:
         if self.bw.filename is None:
             self.clear_image()
         else:
+            # Try to use cached frame first
+            if self.frame_worker is not None:
+                frame_index = int(ms / 1000 * self.fps)
+                cached = self.frame_worker.get_frame(frame_index)
+                if cached is not None:
+                    self.set_image(cached)
+                    return
+            
+            # Fall back to real-time rendering
             self.set_image(self.bw.get_frame_qimage(ms))
 
     def update_image(self) -> None:

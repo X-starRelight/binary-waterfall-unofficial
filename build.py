@@ -62,7 +62,6 @@ def main():
         '--enable-plugin=pyside6',
         '--follow-imports',
         '--output-dir=build',
-        '--windows-console-mode=attach',
     ]
 
     if args.assume_yes_for_downloads:
@@ -124,7 +123,7 @@ def main():
     system = platform.system()
     if system == 'Windows':
         cmd.append(f'--windows-icon-from-ico={icon_ico}')
-        # cmd.append('--windows-console-mode=disable')
+        cmd.append('--windows-console-mode=disable')
         print("Windows detected, icon added.")
     elif system == 'Linux':
         # cmd.append(f'--linux-icon={icon_png}')

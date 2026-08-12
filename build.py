@@ -30,6 +30,8 @@ def parse_args():
                         help='Path to the precompiled dynamic library, skip cargo build when passed in')
     parser.add_argument('--assume-yes-for-downloads', action='store_true',
                         help='Pass --assume-yes-for-downloads to Nuitka for CI usage')
+    # parser.add_argument('--release', action='store_true',
+    #                     help='Build in release mode')
     return parser.parse_args()
 
 
@@ -60,10 +62,14 @@ def main():
         '--enable-plugin=pyside6',
         '--follow-imports',
         '--output-dir=build',
+        '--windows-console-mode=attach',
     ]
 
     if args.assume_yes_for_downloads:
         cmd.append('--assume-yes-for-downloads')
+    # if args.release:
+    #     # cmd.append('--lto=yes')
+    #     pass
 
     # ---------- Qt6 multimedia plugin dynamic library ----------
     import PySide6

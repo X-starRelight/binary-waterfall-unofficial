@@ -23,12 +23,9 @@ def attach_console() -> None:
         import ctypes
         kernel32 = ctypes.WinDLL("kernel32", use_last_error=True)
         if kernel32.AttachConsole(-1):  # ATTACH_PARENT_PROCESS
-            if sys.stdout is None:
-                sys.stdout = open("CONOUT$", "w", encoding="utf-8", errors="replace")
-            if sys.stderr is None:
-                sys.stderr = open("CONOUT$", "w", encoding="utf-8", errors="replace")
-            if sys.stdin is None:
-                sys.stdin = open("CONIN$", "r", encoding="utf-8")
+            sys.stdout = open("CONOUT$", "w", encoding="utf-8", errors="replace", buffering=1)
+            sys.stderr = open("CONOUT$", "w", encoding="utf-8", errors="replace", buffering=1)
+            sys.stdin = open("CONIN$", "r", encoding="utf-8")
     except OSError:
         pass
 

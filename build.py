@@ -123,7 +123,9 @@ def main():
     system = platform.system()
     if system == 'Windows':
         cmd.append(f'--windows-icon-from-ico={icon_ico}')
-        cmd.append('--windows-console-mode=disable')
+        # 编译为控制台子系统：从终端启动时 stdout/stderr 天然绑定到父控制台，
+        # 从桌面启动时会在运行时由 core.setup_console 隐藏新建的控制台窗口。
+        cmd.append('--windows-console-mode=force')
         print("Windows detected, icon added.")
     elif system == 'Linux':
         # cmd.append(f'--linux-icon={icon_png}')

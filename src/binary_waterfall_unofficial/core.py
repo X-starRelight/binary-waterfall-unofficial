@@ -8,28 +8,6 @@ from PySide6.QtGui import QPalette, QColor
 from . import window, constants
 
 
-def attach_console() -> None:
-    """Attach to a parent console when launched from one, create none otherwise.
-
-    - Windows: GUI subsystem binaries never own a console; attach to the parent
-      console (cmd/PowerShell) when present, otherwise leave stdout/stderr as-is.
-    - macOS/Linux: launching from a terminal already inherits the terminal's
-      stdout/stderr, and launching from the desktop simply has no console, so
-      nothing needs to be done.
-    """
-    if sys.platform != "win32":
-        return
-    try:
-        import ctypes
-        kernel32 = ctypes.WinDLL("kernel32", use_last_error=True)
-        if kernel32.AttachConsole(-1):  # ATTACH_PARENT_PROCESS
-            sys.stdout = open("CONOUT$", "w", encoding="utf-8", errors="replace", buffering=1)
-            sys.stderr = open("CONOUT$", "w", encoding="utf-8", errors="replace", buffering=1)
-            sys.stdin = open("CONIN$", "r", encoding="utf-8")
-    except OSError:
-        pass
-
-
 def _setup_app(app: QApplication) -> None:
     """配置应用样式和调色板"""
     app.setStyle("fusion")
@@ -66,7 +44,6 @@ def _setup_app(app: QApplication) -> None:
 
 def main(args: list[str]):
     multiprocessing.freeze_support()
-    attach_console()
 
     if constants.HAS_SPLASH:
         import pyi_splash # pyright: ignore[reportMissingModuleSource]
